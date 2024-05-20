@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 
-from .ui_colelction_settings import UI_Collection_Settings
+from .ui_collection_settings import UI_Collection_Settings
 from .ui_data import UI_Data
 from .ui_gripper import UI_Gripper
 from .ui_latency import UI_Latency

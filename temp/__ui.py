@@ -52,11 +52,11 @@ class UI_Collection_Settings (sg.Frame):
         for i in range(1,7):
             self._input_iterations.append(sg.InputText('1',key=f'num_of_iter{i}',size=(5,1), font=("Consolas", 10)))
         
-        self.domeas_tq = sg.Checkbox('$TORQUE_AXIS_ACT', key='-domeas_tq-', size=(25, 1), enable_events=True,  default=True)
-        self.domeas_curr = sg.Checkbox('$CURR_ACT', key='-domeas_curr-', size=(25, 1), enable_events=True, default=True)
-        self.domeas_tptr = sg.Checkbox('$MOT_TEMP', key='-domeas_tprt-', size=(25, 1),enable_events=True, default=True)
-        self.domeas_posact = sg.Checkbox('$AXIS_ACT', key='-domeas_posact-', size=(25, 1), enable_events=True, default=False)
-        self.domeas_posreal = sg.Checkbox('$AXIS_ACT_MEAS', key='-domeas_posreal-', size=(25, 1), enable_events=True, default=False)
+        self.do_tq = sg.Checkbox('$TORQUE_AXIS_ACT', key='-do_tq-', size=(25, 1), enable_events=True,  default=True)
+        self.do_curr = sg.Checkbox('$CURR_ACT', key='-do_curr-', size=(25, 1), enable_events=True, default=True)
+        self.do_tptr = sg.Checkbox('$MOT_TEMP', key='-do_tprt-', size=(25, 1),enable_events=True, default=True)
+        self.do_posact = sg.Checkbox('$AXIS_ACT', key='-do_posact-', size=(25, 1), enable_events=True, default=False)
+        self.do_posreal = sg.Checkbox('$AXIS_ACT_MEAS', key='-do_posreal-', size=(25, 1), enable_events=True, default=False)
 
    
         self.sample_rate = sg.Combo(['12','24', '36', '48', '60'], default_value='12', key='-Sys_sampling-')
@@ -74,11 +74,11 @@ class UI_Collection_Settings (sg.Frame):
             [ sg.Text("Number of iterations from axis A1 to A6 : "), sg.Push(), *self._input_iterations, sg.Button("All = A1",key='-equal_iter-',font=("Consolas", 10)) ],
             [
                 [sg.Text('Variables to collect :')],
-                [self.domeas_tq, sg.Text('Motor torque of an axis (torque mode)')],
-                [self.domeas_curr, sg.Text('Motor current of an axis')],
-                [self.domeas_tptr, sg.Text('Motor temperature of an axis (~ precision)')],
-                [self.domeas_posact, sg.Text('Axis-specific setpoint position of the robot')],
-                [self.domeas_posreal, sg.Text('Axis-specific real position of the robot')]
+                [self.do_tq, sg.Text('Motor torque of an axis (torque mode)')],
+                [self.do_curr, sg.Text('Motor current of an axis')],
+                [self.do_tptr, sg.Text('Motor temperature of an axis (~ precision)')],
+                [self.do_posact, sg.Text('Axis-specific setpoint position of the robot')],
+                [self.do_posreal, sg.Text('Axis-specific real position of the robot')]
             ],
             [ sg.Text('Variable sampling rate (ms):'), self.sample_rate],
             [
@@ -128,15 +128,15 @@ class UI_Collection_Settings (sg.Frame):
             return
         self._robot_status[cell] = self._connected if connected else self._not_connected
     
-    def update_domeas (self):
+    def update_do (self):
         """_summary_
-        Update the state of the variables domeas_XXX if a checkbox is clicked
+        Update the state of the variables do_XXX if a checkbox is clicked
         """
-        self._do_tq = bool(self.domeas_tq.get())
-        self._do_curr = bool(self.domeas_curr.get())
-        self._do_temp = bool(self.domeas_tptr.get())
-        self._do_posact = bool(self.domeas_posact.get())
-        self._do_posreal = bool(self.domeas_posreal.get())
+        self._do_tq = bool(self.do_tq.get())
+        self._do_curr = bool(self.do_curr.get())
+        self._do_temp = bool(self.do_tptr.get())
+        self._do_posact = bool(self.do_posact.get())
+        self._do_posreal = bool(self.do_posreal.get())
         
     def check_configuration(self):
         """_summary_
@@ -183,11 +183,11 @@ class UI_Collection_Settings (sg.Frame):
         """
         self._disabled = v
 
-        self.domeas_tq.update(disabled=v)
-        self.domeas_curr.update(disabled=v)
-        self.domeas_tptr.update(disabled=v)
-        self.domeas_posact.update(disabled=v)
-        self.domeas_posreal.update(disabled=v)
+        self.do_tq.update(disabled=v)
+        self.do_curr.update(disabled=v)
+        self.do_tptr.update(disabled=v)
+        self.do_posact.update(disabled=v)
+        self.do_posreal.update(disabled=v)
         
         self._input_dataset_name.update(disabled=v, text_color="#000")
         self._input_working_dir.update(disabled=v, text_color="#000")

@@ -216,15 +216,15 @@ class MainProgram (MainWindow):
             self.data.enable_plot_buttons(False)
 
     def trace_selected_variables (self):
-        if(self.collection_settings._do_tq):
+        if(self.data._do_tq):
             self.dataframe.plot(x="Sample_time_s",y=[f"Torque_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Motor Torque (N.m)")
-        if(self.collection_settings._do_curr):
+        if(self.data._do_curr):
             self.dataframe.plot(x="Sample_time_s",y=[f"Current_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Motor Current (%)")
-        if(self.collection_settings._do_temp):
+        if(self.data._do_temp):
             self.dataframe.plot(x="Sample_time_s",y=[f"Temperature_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Motor Temperature (°K)")
-        if(self.collection_settings._do_posact):
-            self.dataframe.plot(x="Sample_time_s",y=[f"Command_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Robot command position in grid (mm))")
-        if(self.collection_settings._do_posreal):
+        if(self.data._do_posact):
+            self.dataframe.plot(x="Sample_time_s",y=[f"Position_Command_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Robot command position in grid (mm))")
+        if(self.data._do_posreal):
             self.dataframe.plot(x="Sample_time_s",y=[f"Position_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Real Robot position in grid (mm))")
         plt.pause(0.1) # Alternative to plt.show() that is not blocking
 
@@ -272,8 +272,8 @@ class MainProgram (MainWindow):
             if event == '-doconst_speed-':
                 self.collection_settings.update_speed_entry()
 
-            if 'domeas' in event:
-                self.collection_settings.update_domeas()
+            if '-do_' in event:
+                self.data.update_do()
 
             ## ---- Robot selector Events ---- ##
             if "rob_select" in event:

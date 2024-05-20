@@ -9,11 +9,7 @@ class UI_Collection_Settings (sg.Frame):
     # Class flags 
     _disabled = False
     _constant_speed = True
-    _do_tq = True
-    _do_curr = True
-    _do_temp = True
-    _do_posact = False
-    _do_posreal = False
+    
     # Robot staus variables
     _not_connected = "#99c"
     _connected = "#3f3"
@@ -26,7 +22,7 @@ class UI_Collection_Settings (sg.Frame):
         sg elements like checkbox and buttons are stored in the class to be accessed easily
         Return : sg.Frame
         """
-        super().__init__("Collection Settings", self.__make_layout())
+        super().__init__("Collection Settings", self.__make_layout(), expand_x=True)
 
     def __make_layout (self):
 
@@ -40,14 +36,7 @@ class UI_Collection_Settings (sg.Frame):
         self._input_iterations = []
         for i in range(1,7):
             self._input_iterations.append(sg.InputText('1',key=f'num_of_iter{i}',size=(5,1), font=("Consolas", 10)))
-        
-        self.domeas_tq = sg.Checkbox('$TORQUE_AXIS_ACT', key='-domeas_tq-', size=(25, 1), enable_events=True,  default=True)
-        self.domeas_curr = sg.Checkbox('$CURR_ACT', key='-domeas_curr-', size=(25, 1), enable_events=True, default=True)
-        self.domeas_tptr = sg.Checkbox('$MOT_TEMP', key='-domeas_tprt-', size=(25, 1),enable_events=True, default=True)
-        self.domeas_posact = sg.Checkbox('$AXIS_ACT', key='-domeas_posact-', size=(25, 1), enable_events=True, default=False)
-        self.domeas_posreal = sg.Checkbox('$AXIS_ACT_MEAS', key='-domeas_posreal-', size=(25, 1), enable_events=True, default=False)
 
-   
         self.sample_rate = sg.Combo(['12','24', '36', '48', '60'], default_value='12', key='-Sys_sampling-')
 
         self.doconst_speed = sg.Checkbox('Constant', key='-doconst_speed-', size=(25, 1),enable_events=True, default=True)
@@ -61,14 +50,6 @@ class UI_Collection_Settings (sg.Frame):
             [ sg.Text("Dataset name :"), self._input_dataset_name, sg.Button("Auto Name", key="-dataset_auto-name-", font=("Consolas", 10)) ],
             [ sg.Text("Working directory :"), self._input_working_dir, self._input_browse_dir ],
             [ sg.Text("Number of iterations from axis A1 to A6 : "), sg.Push(), *self._input_iterations, sg.Button("All = A1",key='-equal_iter-',font=("Consolas", 10)) ],
-            [
-                [sg.Text('Variables to collect :')],
-                [self.domeas_tq, sg.Text('Motor torque of an axis (torque mode)')],
-                [self.domeas_curr, sg.Text('Motor current of an axis')],
-                [self.domeas_tptr, sg.Text('Motor temperature of an axis (~ precision)')],
-                [self.domeas_posact, sg.Text('Axis-specific setpoint position of the robot')],
-                [self.domeas_posreal, sg.Text('Axis-specific real position of the robot')]
-            ],
             [ sg.Text('Variable sampling rate (ms):'), self.sample_rate],
             [
                 sg.Text("Robot speed :"),   self.doconst_speed, sg.Push(),  
@@ -116,16 +97,6 @@ class UI_Collection_Settings (sg.Frame):
             self._robot_status[cell] = self._errored
             return
         self._robot_status[cell] = self._connected if connected else self._not_connected
-    
-    def update_domeas (self):
-        """_summary_
-        Update the state of the variables domeas_XXX if a checkbox is clicked
-        """
-        self._do_tq = bool(self.domeas_tq.get())
-        self._do_curr = bool(self.domeas_curr.get())
-        self._do_temp = bool(self.domeas_tptr.get())
-        self._do_posact = bool(self.domeas_posact.get())
-        self._do_posreal = bool(self.domeas_posreal.get())
         
     def check_configuration(self):
         """_summary_
@@ -171,12 +142,6 @@ class UI_Collection_Settings (sg.Frame):
             v (bool): disable the entries of the entire frame ?
         """
         self._disabled = v
-
-        self.domeas_tq.update(disabled=v)
-        self.domeas_curr.update(disabled=v)
-        self.domeas_tptr.update(disabled=v)
-        self.domeas_posact.update(disabled=v)
-        self.domeas_posreal.update(disabled=v)
         
         self._input_dataset_name.update(disabled=v, text_color="#000")
         self._input_working_dir.update(disabled=v, text_color="#000")

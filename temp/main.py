@@ -181,8 +181,8 @@ while True:
     if event == '-doconst_speed-':
             window.collection_settings.update_speed_entry()
 
-    if 'domeas' in event:
-            window.collection_settings.update_domeas()
+    if 'do' in event:
+            window.collection_settings.update_do()
     ######################## Robot Selector Events #################
     if "rob_select" in event:
         cell = int(event.split(':')[1][:-1])

@@ -8,18 +8,27 @@ from ui import CollectionGraphWindow
 from kuka import KUKA_DataReader, KUKA_Handler
 
 class Measure_robot (CollectionGraphWindow):
+    """Measurement window for a robot
+    """    
+
+    # Flag used to close the window when done
     collecting_data_done = False
-    N = 100 # WIP : A definir en fonction de la config
-    i = 0
+
+    # Collected data
     data = None
 
+    # Latency data [Not used]
     latencies = np.zeros(0)
-    reads = np.zeros(0)
-    writes = np.zeros(0)
 
-    is_tracing = False
-    
     def __init__ (self, handler: KUKA_Handler, cell: int, file_prefix: str, temp_dir: str = ".\\temp"):
+        """Creates a new measurement window
+
+        Args:
+            handler (KUKA_Handler): The Kuka Handler
+            cell (int): The number of the cell (from 1 to 3)
+            file_prefix (str): The prefix for the output file name     
+            temp_dir (str, optional): The temporary working dir for the Kuka Trace parsing. Defaults to ".\temp".
+        """        
         
         super().__init__(cell)
 
@@ -30,6 +39,19 @@ class Measure_robot (CollectionGraphWindow):
         self.temp_dir = temp_dir
         
     def generate_file_name (self, A_iter, speed, sampling, load):
+        """Creates a suffix for the output file name containing the acquisition
+        parameters
+
+        Args:
+            A_iter (List[int]): Number of per-axis iterations
+            speed (str|int|slice): The speed (range) of the acquisition
+            sampling (int|str): The sampling rate of the system variables
+            load (int): The class of the acquisition
+
+        Returns:
+            str: The standardized suffix
+        """        
+
         self.settings = "[" + (speed if type(speed) != slice else f'{speed.start}%-{speed.stop}') + "%] "
         self.settings += f"[{sampling}ms] " 
         self.settings += f"[class {load}] "
@@ -39,7 +61,18 @@ class Measure_robot (CollectionGraphWindow):
         self.file_name = self.file_prefix + " " + self.settings + "- " + self.name
         return self.file_name
     
-    def measure_sequence (self, A_iter, speed, sampling, trace_sampling, load: int = -1, lock: Semaphore = None, done: Callable = None):
+    def measure_sequence (self, A_iter, speed, sampling, trace_sampling, load: int = 0, lock: Semaphore = None, done: Callable = None):
+        """Runs the acquisition and saves the result in .xlsx files
+
+        Args:
+            A_iter (List[int]): The number of iteration for each axis
+            speed (str|int|slice): The speed (range) of the acquisition
+            sampling (str|int): The sampling rate of the system variables
+            trace_sampling (str): The name of the configuration for KUKA Trace
+            load (int, optional): The class of the acquisition. Defaults to 0.
+            lock (Semaphore, optional): The semaphore used to sync multiple robots. Defaults to None.
+            done (Callable, optional): The function used to declare the end of a run. Defaults to None.
+        """        
         
         self.generate_file_name(A_iter, speed, sampling, load)
 
@@ -65,6 +98,9 @@ class Measure_robot (CollectionGraphWindow):
         self.export_measures()
 
     def export_measures (self):
+        """Exports the internally-stored DataFrames to .xlsx files
+        """        
+
         file_name = self.file_name + ".xlsx"
         trace_file_name = self.file_name + "_TRACE" + ".xlsx"
 
@@ -80,13 +116,23 @@ class Measure_robot (CollectionGraphWindow):
             print("Lost data from " + self.name)
 
     def _poll (self):
+        """Updates this window. MUST BE CALLED BY THE MAIN THREAD.
+
+        Returns:
+            bool: This window is still opened
+        """        
+
         event, value = self.read(timeout=10)
+        
         if event == sg.WIN_CLOSED or event == '-colexit-':
             self.close()
             return False
+        
         if self.collecting_data_done :
             self.collecting_data_done = False
             self._status.update("Collection Done !",text_color="#0c2")
         else:
             self.redraw()
+
         return True
+    

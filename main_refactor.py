@@ -272,8 +272,8 @@ class MainProgram (MainWindow):
             if event == '-doconst_speed-':
                 self.collection_settings.update_speed_entry()
 
-            if 'domeas' in event:
-                self.collection_settings.update_domeas()
+            if 'do' in event:
+                self.collection_settings.update_do()
 
             ## ---- Robot selector Events ---- ##
             if "rob_select" in event:
