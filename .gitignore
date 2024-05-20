@@ -1,0 +1,9 @@
+data
+data/*
+Timings.xlsx
+__pycache__
+__pycache__/*
+ui/__pycache__
+ui/__pycache__/*
+kuka/__pycache__/
+kuka/__pycache__/*
