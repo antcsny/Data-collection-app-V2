@@ -1,0 +1,213 @@
+&ACCESS RVP
+&COMMENT USER specified PLC program
+DEF Data_collector( )
+   ;FOLD DECLARATIONS
+      ;FOLD USER DECL
+         ; Please insert user defined declarations
+         DECL INT __I
+         
+      ;ENDFOLD (USER DECL)
+   ;ENDFOLD (DECLARATIONS)
+   ;FOLD INI
+      ;FOLD USER INIT
+         ; Please insert user defined initialization commands
+         ColRUN = FALSE
+         
+         FOR __I = 1 TO 36
+            __TAB_1[__I] = 0   
+         ENDFOR
+         
+         FOR __I = 1 TO ColBUFFER_SIZE 
+            
+            ColBUFFER_TQ_A1[__I] = 0
+            ColBUFFER_TQ_A2[__I] = 0
+            ColBUFFER_TQ_A3[__I] = 0
+            ColBUFFER_TQ_A4[__I] = 0
+            ColBUFFER_TQ_A5[__I] = 0
+            ColBUFFER_TQ_A6[__I] = 0
+            ColBUFFER_TEMP_A1[__I] = 0
+            ColBUFFER_TEMP_A2[__I] = 0
+            ColBUFFER_TEMP_A3[__I] = 0
+            ColBUFFER_TEMP_A4[__I] = 0 
+            ColBUFFER_TEMP_A5[__I] = 0
+            ColBUFFER_TEMP_A6[__I] = 0
+            ColBUFFER_CURR_A1[__I] = 0
+            ColBUFFER_CURR_A2[__I] = 0
+            ColBUFFER_CURR_A3[__I] = 0
+            ColBUFFER_CURR_A4[__I] = 0
+            ColBUFFER_CURR_A5[__I] = 0
+            ColBUFFER_CURR_A6[__I] = 0
+            ColBUFFER_TIME[__I] = 0
+            ColBUFFER_ANALOG[__I] = 0
+            ColBUFFER_POS_ACT[__I] = $AXIS_ACT
+            ColBUFFER_POS_MEAS[__I] = $AXIS_ACT_MEAS
+            
+         ENDFOR
+         
+      ;ENDFOLD (USER INIT)
+   ;ENDFOLD (INI)
+   
+   LOOP
+      ;FOLD USER PLC
+      ;Make your modifications here
+      IF ColRESET THEN
+         ColRESET = FALSE
+         ColRESET_DONE = FALSE            
+         SAMPLE_NUMBER = 1
+         ColKEEPING_UP = TRUE
+         ColRESET_DONE = TRUE
+         RESET_COMMUNICATION()
+         IF __PyResetTimer THEN
+            __PyResetTimer = FALSE
+            $TIMER[1] = 0
+         ENDIF
+         FOR __I = 1 TO 36
+            __TAB_1[__I] = 0   
+         ENDFOR
+      ENDIF
+      
+      IF ColRUN THEN
+         $TIMER_STOP[5] = FALSE
+         IF $TIMER[5] >= ColSAMPLING THEN
+            $TIMER[5] = 0
+            ColBUFFER_TIME[SAMPLE_NUMBER] = $TIMER[1]
+            ColBUFFER_POS_ACT[SAMPLE_NUMBER] = $AXIS_ACT
+            ColBUFFER_POS_MEAS[SAMPLE_NUMBER] = $AXIS_ACT_MEAS
+            
+            ColBUFFER_TQ_A1[SAMPLE_NUMBER] = $TORQUE_AXIS_ACT[1]
+            ColBUFFER_TQ_A2[SAMPLE_NUMBER] = $TORQUE_AXIS_ACT[2]
+            ColBUFFER_TQ_A3[SAMPLE_NUMBER] = $TORQUE_AXIS_ACT[3]
+            ColBUFFER_TQ_A4[SAMPLE_NUMBER] = $TORQUE_AXIS_ACT[4]
+            ColBUFFER_TQ_A5[SAMPLE_NUMBER] = $TORQUE_AXIS_ACT[5]
+            ColBUFFER_TQ_A6[SAMPLE_NUMBER] = $TORQUE_AXIS_ACT[6]
+            
+            ColBUFFER_TEMP_A1[SAMPLE_NUMBER] = $MOT_TEMP[1]
+            ColBUFFER_TEMP_A2[SAMPLE_NUMBER] = $MOT_TEMP[2]
+            ColBUFFER_TEMP_A3[SAMPLE_NUMBER] = $MOT_TEMP[3]
+            ColBUFFER_TEMP_A4[SAMPLE_NUMBER] = $MOT_TEMP[4]
+            ColBUFFER_TEMP_A5[SAMPLE_NUMBER] = $MOT_TEMP[5]
+            ColBUFFER_TEMP_A6[SAMPLE_NUMBER] = $MOT_TEMP[6]
+            
+            ColBUFFER_CURR_A1[SAMPLE_NUMBER] = $CURR_ACT[1]
+            ColBUFFER_CURR_A2[SAMPLE_NUMBER] = $CURR_ACT[2]
+            ColBUFFER_CURR_A3[SAMPLE_NUMBER] = $CURR_ACT[3]
+            ColBUFFER_CURR_A4[SAMPLE_NUMBER] = $CURR_ACT[4]
+            ColBUFFER_CURR_A5[SAMPLE_NUMBER] = $CURR_ACT[5]
+            ColBUFFER_CURR_A6[SAMPLE_NUMBER] = $CURR_ACT[6]
+
+            ColBUFFER_ANALOG[SAMPLE_NUMBER] = $ANOUT[1]
+
+            SAMPLE_NUMBER=SAMPLE_NUMBER+1
+            
+            IF SAMPLE_NUMBER > ColBUFFER_SIZE THEN
+               SAMPLE_NUMBER = 1
+            ENDIF
+            
+         ELSE
+            COMMUNICATION_ROUTINE()
+         ENDIF
+         IF $TIMER[5] >= 2 * ColSAMPLING THEN
+            ColKEEPING_UP = FALSE
+         ENDIF
+      ELSE
+         $TIMER_STOP[5] = TRUE
+         COMMUNICATION_ROUTINE()
+      ENDIF
+         
+      ;ENDFOLD (USER PLC)
+   ENDLOOP
+END
+   ;ENDFOLD
+   ;FOLD USER SUBROUTINE
+      ;Integrate your user defined subroutines
+      
+   ;ENDFOLD (USER SUBROUTINE)
+
+DEF RESET_COMMUNICATION ()
+
+      ;Tabs initialisation
+      DECL INT __I
+      FOR __I = 1 TO 36 
+         __TAB_1[__I] = 0   
+      ENDFOR
+      SAMPLE_READ = 1
+      __PYTHON_HAS_READ = 0
+END
+
+DEF COMMUNICATION_ROUTINE ()
+
+   WAIT SEC 0
+
+   ; Check if python read and if data available
+   IF ((__PYTHON_HAS_READ == (SAMPLE_READ - 1)) OR (__PYTHON_HAS_READ == ColBUFFER_SIZE)) AND (SAMPLE_READ <> SAMPLE_NUMBER) THEN
+      ; __PYTHON_HAS_READ = FALSE
+      __TAB_1[35] = 0   ;  __PYTHON_DATA_AVAILABLE = FALSE
+      
+      ; Make data available
+      
+      ; Sample
+      __TAB_1[1] = ColBUFFER_TIME[SAMPLE_READ]
+      
+      ; A1
+      __TAB_1[2] = ColBUFFER_POS_ACT[SAMPLE_READ].A1
+      __TAB_1[3] = ColBUFFER_POS_MEAS[SAMPLE_READ].A1
+      __TAB_1[4]  = ColBUFFER_TQ_A1[SAMPLE_READ]
+      __TAB_1[5] = ColBUFFER_CURR_A1[SAMPLE_READ]
+      __TAB_1[6]  = ColBUFFER_TEMP_A1[SAMPLE_READ]
+      
+      ; A2
+      __TAB_1[7] = ColBUFFER_POS_ACT[SAMPLE_READ].A2
+      __TAB_1[8] = ColBUFFER_POS_MEAS[SAMPLE_READ].A2
+      __TAB_1[9] = ColBUFFER_TQ_A2[SAMPLE_READ]
+      __TAB_1[10] = ColBUFFER_CURR_A2[SAMPLE_READ]
+      __TAB_1[11] = ColBUFFER_TEMP_A2[SAMPLE_READ]
+      
+      ; A3
+      __TAB_1[12] = ColBUFFER_POS_ACT[SAMPLE_READ].A3
+      __TAB_1[13] = ColBUFFER_POS_MEAS[SAMPLE_READ].A3
+      __TAB_1[14] = ColBUFFER_TQ_A3[SAMPLE_READ]
+      __TAB_1[15] = ColBUFFER_CURR_A3[SAMPLE_READ]
+      __TAB_1[16] = ColBUFFER_TEMP_A3[SAMPLE_READ]
+      
+      
+      ; A4
+      __TAB_1[17] = ColBUFFER_POS_ACT[SAMPLE_READ].A4
+      __TAB_1[18] = ColBUFFER_POS_MEAS[SAMPLE_READ].A4
+      __TAB_1[19] = ColBUFFER_TQ_A4[SAMPLE_READ]
+      __TAB_1[20] = ColBUFFER_CURR_A4[SAMPLE_READ]
+      __TAB_1[21] = ColBUFFER_TEMP_A4[SAMPLE_READ]
+     
+      ; A5
+      __TAB_1[22] = ColBUFFER_POS_ACT[SAMPLE_READ].A5
+      __TAB_1[23] = ColBUFFER_POS_MEAS[SAMPLE_READ].A5
+      __TAB_1[24] = ColBUFFER_TQ_A5[SAMPLE_READ]
+      __TAB_1[25] = ColBUFFER_CURR_A5[SAMPLE_READ]
+      __TAB_1[26] = ColBUFFER_TEMP_A5[SAMPLE_READ]
+     
+      ; A6
+      __TAB_1[27] = ColBUFFER_POS_ACT[SAMPLE_READ].A6
+      __TAB_1[28] = ColBUFFER_POS_MEAS[SAMPLE_READ].A6
+      __TAB_1[29] = ColBUFFER_TQ_A6[SAMPLE_READ]
+      __TAB_1[30] = ColBUFFER_CURR_A6[SAMPLE_READ]
+      __TAB_1[31]= ColBUFFER_TEMP_A6[SAMPLE_READ]     
+      
+      ; System variables
+      __TAB_1[32] = ColBUFFER_ANALOG[SAMPLE_READ]
+      __TAB_1[33] = SAMPLE_READ
+      __TAB_1[34] = SAMPLE_NUMBER
+      
+      
+      SAMPLE_READ = SAMPLE_READ + 1
+      IF SAMPLE_READ > ColBUFFER_SIZE THEN
+         SAMPLE_READ = 1   
+      ENDIF
+      
+      __TAB_1[35] = 1    ;  __PYTHON_DATA_AVAILABLE = TRUE
+      ENDIF
+      
+      IF (NOT ColRUN) AND (SAMPLE_NUMBER == SAMPLE_READ) THEN
+         __TAB_1[36] = 1   ;  __READ_DONE
+      ELSE
+         __TAB_1[36] = 0
+      ENDIF
+END

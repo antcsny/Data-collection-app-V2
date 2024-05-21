@@ -134,7 +134,7 @@ This section describes how to deploy the data collection on a cell.
 
 ### Global variables
 
-The following declaration must be added in the `System/$config.dat` file 
+The following declarations must be added in the `System/$config.dat` file 
 on the robot KUKA workspace :
 
 ```
@@ -154,7 +154,7 @@ This progam can be found in [`robot/KRL/`](./robot/KRL).
 Copy the provided configuration files found in [`robot/configurations/`](./robot/configurations) to
 the `TRACE` folder of the robot.
 
-**Example path** : `\\192.168.1.151\...\TRACE\`
+**Example path** : `\\192.168.1.151\roboter\TRACE\`
 
 ### The `Axis_Main.src` program
 

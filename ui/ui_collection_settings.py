@@ -29,7 +29,7 @@ class UI_Collection_Settings (sg.Frame):
         now = self.now()
         self._input_dataset_name = sg.InputText(now, key='-dataset_name-', size=(30, 1), font=("Consolas", 10))
         
-        dir_path = os.path.dirname(os.path.realpath(__file__)) + "/data"
+        dir_path = os.getcwd() + "/data"
         self._input_working_dir = sg.Input(default_text=dir_path, key='-user_path-', size=(40, 1), font=("Consolas", 10))
         self._input_browse_dir = sg.FolderBrowse(initial_folder=dir_path, key='-browse-')
 

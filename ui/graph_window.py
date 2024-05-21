@@ -20,14 +20,8 @@ class CollectionGraphWindow (sg.Window):
         self._data_latency = []
 
         self._s = 0
-        super().__init__(f'Robot {cell}', self.__make_layout(), finalize=True)
         
-    def __make_layout (self):
-        self._title = sg.Text(f'Robot {self.cell}', key="-TITLE-", font='Helvetica 20')
-        self._subtitle = sg.Text("Collecting sample n°...", key="Subtitle")
-        self._canvas_elem = sg.Canvas(size=(480,360), key="-CANVAS-")
-        self._status = sg.Text("",key="-colstatus-",text_color="#000", font="Helvetica 15")
-        self._exit = sg.Button("Exit", key='-colexit-',font="Helvetica 11", size=(15,1))
+        super().__init__(f'Robot {cell}', self.__make_layout(), finalize=True)
         
         # Canvas settings
         self._canvas = self._canvas_elem.TKCanvas
@@ -46,6 +40,13 @@ class CollectionGraphWindow (sg.Window):
         self._fig_agg = FigureCanvasTkAgg(self._figure, self._canvas)
         self._fig_agg.draw()
         self._fig_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+        
+    def __make_layout (self):
+        self._title = sg.Text(f'Robot {self.cell}', key="-TITLE-", font='Helvetica 20')
+        self._subtitle = sg.Text("Collecting sample n°...", key="Subtitle")
+        self._canvas_elem = sg.Canvas(size=(480,360), key="-CANVAS-")
+        self._status = sg.Text("",key="-colstatus-",text_color="#000", font="Helvetica 15")
+        self._exit = sg.Button("Exit", key='-colexit-',font="Helvetica 11", size=(15,1))
         
         layout = [
             [ sg.Push(), self._title, sg.Push() ],
@@ -89,6 +90,8 @@ class CollectionGraphWindow (sg.Window):
         self._ay.set_ylabel("Network latency")
         self._ay.grid()
         self._ay.plot(range(len(b)), b)
+
+        self._figure.tight_layout()
 
         self._fig_agg.draw()
         self._subtitle.update(f"Collecting sample n°{self._s}")
