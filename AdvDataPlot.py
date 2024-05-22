@@ -53,7 +53,7 @@ class MainWindow (sg.Window):
     
     def def_file_browse(self, key:str):
         data_path = os.path.dirname(os.path.realpath(__file__)) + "/data"
-        self._input_data = sg.Input(default_text=data_path, key=f'-path_{key}-', size=(130, 1), font=("Consolas", 10))
+        self._input_data = sg.Input(default_text=data_path, key=f'-path_{key}-', size=(67, 1), font=("Consolas", 10), enable_events=True)
         self.import_xlsx =  sg.FileBrowse("Browse EXCEL",initial_folder=data_path, file_types=(('Excel Files', '*.xlsx'),), key=f'-browse_{key}-')
         self.open_xlsx = sg.Button("OPEN", key=f'-open_{key}-')
         return [self._input_data, self.import_xlsx, self.open_xlsx]
@@ -134,5 +134,8 @@ while True:
         window.update_do()
     if event == '-trace_selvar-':
         window.trace_selected_variables(1)
+    if 'path' in event:
+        window[event].Widget.xview_moveto(1)
+
     
 window.close()

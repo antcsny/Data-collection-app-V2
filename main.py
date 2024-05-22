@@ -208,7 +208,8 @@ class MainProgram (MainWindow):
         """        
         try:
             self.dataframe = pd.read_excel(path)
-            self.dataframe['Sample_time_s'] = self.dataframe['Sample_time']/1000
+            self.data.update_layout_on_columns(self, self.dataframe.columns)
+            self.dataframe['Sample_time_s'] = self.dataframe['Sample']/1000 if 'TRACE' in path else self.dataframe['Sample_time']/1000
             sg.popup("Done")
             self.data.enable_plot_buttons(True)
         except Exception as e:
@@ -216,17 +217,12 @@ class MainProgram (MainWindow):
             self.data.enable_plot_buttons(False)
 
     def trace_selected_variables (self):
-        if(self.data._do_tq):
-            self.dataframe.plot(x="Sample_time_s",y=[f"Torque_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Motor Torque (N.m)")
-        if(self.data._do_curr):
-            self.dataframe.plot(x="Sample_time_s",y=[f"Current_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Motor Current (%)")
-        if(self.data._do_temp):
-            self.dataframe.plot(x="Sample_time_s",y=[f"Temperature_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Motor Temperature (°K)")
-        if(self.data._do_posact):
-            self.dataframe.plot(x="Sample_time_s",y=[f"Position_Command_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Robot command position in grid (mm))")
-        if(self.data._do_posreal):
-            self.dataframe.plot(x="Sample_time_s",y=[f"Position_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel("Real Robot position in grid (mm))")
-        plt.pause(0.1) # Alternative to plt.show() that is not blocking
+        plt.close('all')
+        for i, var in enumerate(self.data._var_totrace):
+            if(self.data._do_trace_var[i]):
+                self.dataframe.plot(x="Sample_time_s",y=[f"{var}_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel(f"Motor {var}")
+            plt.tight_layout()
+            plt.pause(0.1) # Alternative to plt.show() that is not blocking
 
     def trace_sampling (self):
         self.dataframe.plot(x="Sample_time_s",y=["Queue_Read", "Queue_Write"], grid=True),plt.ylabel("Samples")
@@ -272,7 +268,7 @@ class MainProgram (MainWindow):
             if event == '-doconst_speed-':
                 self.collection_settings.update_speed_entry()
 
-            if '-do_' in event:
+            if '-varplot_cbx' in event:
                 self.data.update_do()
 
             ## ---- Robot selector Events ---- ##
@@ -298,9 +294,12 @@ class MainProgram (MainWindow):
                 self.gripper_close()
 
             ## ---- Trace Events ---- ##
+            if 'path' in event:
+                self[event].Widget.xview_moveto(1)
 
-            if event == '-open_xlsx-':
-                self.open_xlsx(values['-data_path-'])
+            if '-open_data' in event :
+                nb = int(event.removeprefix("-open_data").removesuffix("-")) # get the identifier of the clicked button
+                self.open_xlsx(values[f'-path_data{nb}-'])
                 
             if event == '-trace_selvar-':
                 self.trace_selected_variables()
@@ -310,7 +309,6 @@ class MainProgram (MainWindow):
                 
             if event == '-trace_latency-':
                 self.trace_latencies()
-
 
             ## ---- Other windows updates ---- ## 
 
