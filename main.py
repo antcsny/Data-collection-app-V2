@@ -84,7 +84,7 @@ class MainProgram (MainWindow):
 
         sync_number = 0
         for w in self.robot_windows:
-            sync_number += 1 if not w.collecting_data_done else 0
+            sync_number += 1 if w is not None and not w.collecting_data_done else 0
 
         if self.sync_done == sync_number:
             self.sync_done = 0
