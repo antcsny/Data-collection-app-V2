@@ -9,6 +9,7 @@ from threading import Semaphore, Thread
 from typing import List, Any
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 class MainProgram (MainWindow):
     """Wrapper for the main program. Classes are more reliable than global variables.
@@ -20,7 +21,7 @@ class MainProgram (MainWindow):
 
     ### ---- Robots ---- ###
     robot_handlers: List[KUKA_Handler] = [ None ] * 3
-    robot_windows = [ ]
+    robot_windows: List[Measure_robot] = [ ]
     
     ### ---- Sync Mechanism ---- ###
     sync_done = 0
@@ -80,9 +81,14 @@ class MainProgram (MainWindow):
         """        
 
         self.sync_done += 1
-        if self.sync_done == self.sync_number:
+
+        sync_number = 0
+        for w in self.robot_windows:
+            sync_number += 1 if not w.collecting_data_done else 0
+
+        if self.sync_done == sync_number:
             self.sync_done = 0
-            self.sync_sem.release(self.sync_number)
+            self.sync_sem.release(sync_number)
 
     def close (self):
         """Closes the main program
@@ -105,6 +111,8 @@ class MainProgram (MainWindow):
 
         # Creating the file names
         file_path = values["-user_path-"] + "/" + values["-dataset_name-"]
+        if not os.path.exists(values["-user_path-"]):
+            os.mkdir(values["-user_path-"])
 
         # Creating the windows used to collect data
         self.robot_windows = [ ]
@@ -148,13 +156,13 @@ class MainProgram (MainWindow):
         """        
 
         try:
-            window_latency = []
+            self.window_latency = []
             for i in range(len(self.robot_handlers)):
                 r = self.robot_handlers[i]
                 if r is not None:
                     w = Measure_latency(f"Latency measurement for Robot {i + 1}")
                     w._poll()
-                    window_latency.append(w)
+                    self.window_latency.append(w)
                     t = Thread(target=w.measure_latency, args=[r], daemon=False)
                     t.start()
 

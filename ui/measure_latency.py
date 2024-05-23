@@ -55,6 +55,8 @@ class Measure_latency(sg.Window):
             robot (KUKA_Handler): The robot handler
         """        
 
+        print("Measuring latency with " + str(robot.ipAddress))
+
         # Preparing the buffers
         self.acc_time_M = np.zeros(self.N)
         self.acc_time_1 = np.zeros(self.N)

@@ -1,0 +1,37 @@
+&ACCESS RVP
+&COMMENT USER specified PLC program
+DEF  Python_Gripper ( )
+;FOLD DECLARATIONS
+  ;FOLD USER DECL
+  ; Please insert user defined declarations
+
+  ;ENDFOLD (USER DECL)
+;ENDFOLD (DECLARATIONS)
+;FOLD INI
+  ;FOLD USER INIT
+  ; Please insert user defined initialization commands
+
+  ;ENDFOLD (USER INIT)
+;ENDFOLD (INI)
+
+LOOP
+;FOLD USER PLC
+;Make your modifications here
+WAIT FOR PyOPEN_GRIPPER OR PyCLOSE_GRIPPER
+IF PyOPEN_GRIPPER THEN
+   PULSE ( $OUT[7], true, 0.5 )
+   PyOPEN_GRIPPER=FALSE
+ENDIF
+
+IF PyCLOSE_GRIPPER THEN
+   PULSE ( $OUT[8], true, 0.5 )
+   PyCLOSE_GRIPPER=FALSE
+ENDIF
+;ENDFOLD (USER PLC)
+ENDLOOP
+END
+;ENDFOLD
+;FOLD USER SUBROUTINE
+;Integrate your user defined subroutines
+
+;ENDFOLD (USER SUBROUTINE)
