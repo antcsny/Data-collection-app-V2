@@ -226,9 +226,13 @@ class MainProgram (MainWindow):
 
     def trace_selected_variables (self):
         plt.close('all')
+        a = self.data.get_selected_axis()
+        if (len(a)==0):
+            sg.PopupOK("Select at least one axis to plot")
+            return
         for i, var in enumerate(self.data._var_totrace):
             if(self.data._do_trace_var[i]):
-                self.dataframe.plot(x="Sample_time_s",y=[f"{var}_A{i}" for i in range(1,7,1)], grid=True),plt.ylabel(f"Motor {var}")
+                self.dataframe.plot(x="Sample_time_s",y=[f"{var}_A{i}" for i in a], grid=True),plt.ylabel(f"Motor {var}")
             plt.tight_layout()
             plt.pause(0.1) # Alternative to plt.show() that is not blocking
 

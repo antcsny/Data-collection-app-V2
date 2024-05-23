@@ -8,6 +8,7 @@ class UI_Data (sg.Frame):
     
     _var_totrace = []
     _do_trace_var = []
+    _do_trace_axis = [True, True, True, False, False]
     
     def __init__ (self):
         """ : Class constructor
@@ -28,16 +29,19 @@ class UI_Data (sg.Frame):
         self.trace_samples = sg.Button('Trace Sample collection history', key='-trace_sample-', disabled=True, expand_x=True)
         self.trace_latency = sg.Button('Trace Sample latency distribution', key='-trace_latency-', disabled=True, expand_x=True)
         
+        self.do_axis = [ sg.Checkbox(f'A{i}', key=f'-do_axis{i}-', enable_events=True, default=True) for i in range(1,7)]
+        
         self.var_checkbox = []
 
         self._layout = [
             [ self._btn_start ],
-            [ sg.Frame("Quickview of the colelcted data in excel file :", border_width=0, expand_y=True, layout = [
+            [ sg.Frame("Quickview of the colelcted data in excel file :", expand_y=True, layout = [
                     [ sg.VPush() ],
                     [ self.import_data ],
                     [ self.trace_selvariables, self.trace_samples ],
                     [ self.trace_latency ],
-                    [ sg.VPush() ]
+                    [ sg.VPush() ],
+                    [ sg.Frame("Axis to plot :", border_width=0.5, expand_x=True, layout = [self.do_axis ]) ]
                     ]),
               sg.Frame("Variables to plot :", layout=[ [sg.Col(layout=[], key='-col_var_to_plot-')] ])
             ],
@@ -80,6 +84,15 @@ class UI_Data (sg.Frame):
         """
         for i, _ in enumerate(self._var_totrace):
             self._do_trace_var[i] = bool(self.var_checkbox[i].get())
+            
+    def get_selected_axis (self):
+        i=1
+        res = []
+        for axis in self.do_axis:
+            if axis.get():
+                res.append(i)
+            i+=1
+        return res
         
     def update_layout_on_columns(self, win: sg.Window, columns):
         """
