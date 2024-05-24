@@ -13,6 +13,7 @@ class Measure_robot (CollectionGraphWindow):
 
     # Flag used to close the window when done
     collecting_data_done = False
+    storing_data_done = False
 
     # Collected data
     data = None
@@ -130,9 +131,11 @@ class Measure_robot (CollectionGraphWindow):
         
         if self.collecting_data_done :
             self.collecting_data_done = False
-            self._status.update("Collection Done !",text_color="#0c2")
+            self._status.update("Collection Done",text_color="#00f")
+        elif self.storing_data_done :
+            self.storing_data_done = False
+            self._status.update("Successfully stored data", text_color='#0c2')
         else:
             self.redraw()
-
         return True
     

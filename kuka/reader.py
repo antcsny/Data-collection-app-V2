@@ -273,7 +273,7 @@ class KUKA_DataReader:
         # Flag indicating the state of the collection
         self._read_done = False
         
-        while not self._read_done:
+        while self._read_done != 1 :
             
             # Getting our sample
             data, self._data_available, self._read_done = self.read(now, load)
@@ -309,7 +309,9 @@ class KUKA_DataReader:
                 sleep(self.rate/2)
 
             else:
-                # Sleeping to wait for the next data to be sampled
+                # Sleeping to wait for the next data to be sampled, stop de trace if robot movement done
+                if self._read_done == 2:
+                    self.trace.Trace_Stop()
                 sleep(self.rate/2)
         
         # Creating a data frame
@@ -397,7 +399,6 @@ class KUKA_DataReader:
         trace_sampling = int(trace_config.split("_")[0])
 
         ## ---- Run for a single speed ---- ##
-
         if type(speed) == str or type(speed) == int:
 
             # Sync with other robots
@@ -429,7 +430,6 @@ class KUKA_DataReader:
             
             # Returning the two collected DataFrames
             return data_vars, data_trace
-        
         ## -------------------------------- ##
 
         ## ---- Run for multiple speeds ---- ##

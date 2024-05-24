@@ -205,8 +205,11 @@ DEF COMMUNICATION_ROUTINE ()
       __TAB_1[35] = 1    ;  __PYTHON_DATA_AVAILABLE = TRUE
       ENDIF
       
-      IF (NOT ColRUN) AND (SAMPLE_NUMBER == SAMPLE_READ) THEN
-         __TAB_1[36] = 1   ;  __READ_DONE
+      IF (NOT ColRUN) AND  THEN
+         IF SAMPLE_NUMBER == SAMPLE_READ THEN
+            __TAB_1[36] = 1   ;  __READ_DONE
+         ELSE
+            __TAB_1[36] = 2   ;  TRACE_STOP
       ELSE
          __TAB_1[36] = 0
       ENDIF
