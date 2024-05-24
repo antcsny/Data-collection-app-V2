@@ -112,6 +112,7 @@ class Measure_robot (CollectionGraphWindow):
         try:
             self.data.to_excel(file_name)
             self.trace_data.to_excel(trace_file_name)
+            self.storing_data_done = True
         except Exception as e:
             traceback.print_exception(e)
             print("Lost data from " + self.name)
@@ -132,9 +133,11 @@ class Measure_robot (CollectionGraphWindow):
         if self.collecting_data_done :
             self.collecting_data_done = False
             self._status.update("Collection Done",text_color="#00f")
+            self._exit.update(disabled=True)
         elif self.storing_data_done :
             self.storing_data_done = False
             self._status.update("Successfully stored data", text_color='#0c2')
+            self._exit.update(disabled=False)
         else:
             self.redraw()
         return True

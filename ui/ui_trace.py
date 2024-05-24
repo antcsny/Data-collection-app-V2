@@ -13,7 +13,7 @@ class UI_KUKATrace( sg.Frame):
 
     def __make_layout (self):
 
-        self._sampling_rate = sg.Combo(['12_ms','12_ms_v2','4_ms'], key='-Trace_config-', default_value='12_ms', size=(20, 1))
+        self._sampling_rate = sg.Combo(['12_ms','12_ms_v2','4_ms_v2'], key='-Trace_config-', default_value='12_ms_v2', size=(20, 1))
         self._do_delfile = sg.Checkbox('Delete files from KRC?',key='-delete-',default=True, disabled=True)
 
         self._layout = [

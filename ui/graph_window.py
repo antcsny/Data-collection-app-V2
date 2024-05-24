@@ -46,7 +46,7 @@ class CollectionGraphWindow (sg.Window):
         self._subtitle = sg.Text("Collecting sample n°...", key="Subtitle")
         self._canvas_elem = sg.Canvas(size=(480,360), key="-CANVAS-")
         self._status = sg.Text("",key="-colstatus-",text_color="#000", font="Helvetica 15")
-        self._exit = sg.Button("Exit", key='-colexit-',font="Helvetica 11", size=(15,1))
+        self._exit = sg.Button("Exit", key='-colexit-',font="Helvetica 11", size=(15,1),button_color='#F0F0F0')
         
         layout = [
             [ sg.Push(), self._title, sg.Push() ],

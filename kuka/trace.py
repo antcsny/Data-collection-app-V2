@@ -41,17 +41,17 @@ class KUKA_Trace:
         if self.enable:
             config_path = fr'\\{self.rob_instance.ipAddress}\roboter\TRACE\{configuration}.xml'
 
-            try:
-                tree = et.parse(config_path)
-                root = tree.getroot()
+            # try:         # Comented to not modify the xml file
+            #     tree = et.parse(config_path)
+            #     root = tree.getroot()
 
-                for time_element in root.iter('Time'):
-                    time_element.text = duration
-                tree.write(config_path)
+            #     for time_element in root.iter('Time'):
+            #         time_element.text = duration
+            #     tree.write(config_path)
 
 
-            except Exception as e:
-                print(f"XML writing error: {e}")
+            # except Exception as e:
+            #     print(f"XML writing error: {e}")
 
             if type(name) == str and type(configuration) == str:
                 self.rob_instance.KUKA_WriteVar('$TRACE.CONFIG[]', f'"{configuration}.xml"')
@@ -100,7 +100,8 @@ class KUKA_Trace:
         """
         if self.enable:
             self.rob_instance.KUKA_WriteVar('$TRACE.MODE', '#T_STOP')
-        print('Trace stopped')
+        if self.rob_instance.KUKA_ReadVar('$TRACE.STATE') in [b'#T_END', b'#T_WRITING']:
+            print('Trace stopped')
 
     def Trace_State(self):
         """

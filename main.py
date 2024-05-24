@@ -233,7 +233,7 @@ class MainProgram (MainWindow):
         for i, var in enumerate(self.data._var_totrace):
             if(self.data._do_trace_var[i]):
                 self.dataframe.plot(x="Sample_time_s",y=[f"{var}_A{i}" for i in a], grid=True),plt.ylabel(f"Motor {var}")
-            plt.tight_layout()
+                plt.tight_layout()
             plt.pause(0.1) # Alternative to plt.show() that is not blocking
 
     def trace_sampling (self):

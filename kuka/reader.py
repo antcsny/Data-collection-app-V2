@@ -151,7 +151,7 @@ class KUKA_DataReader:
         return [ (1 if i == motor else 0) for i in range(1,7) ]
 
     ## Get data
-    def get_data (self) -> Tuple[List[float|int], bool, bool]:
+    def get_data (self) -> Tuple[List[float|int], bool, int]:
         """Collects the latest sample made available by the Data collector sub
 
         Raises:
@@ -180,11 +180,11 @@ class KUKA_DataReader:
         return (
                 data, 
                 TAB1[self.__TAB1_DATA_AVAILABLE] == 1,              # Data available flag
-                TAB1[self.__TAB1_DONE] == 1                         # PyDone flag
+                TAB1[self.__TAB1_DONE]                        # PyDone status
                 )
 
     ## Reading function for the queue
-    def read (self, time_before, load: int = 0) -> Tuple[List[float|int], bool, bool]:
+    def read (self, time_before, load: int = 0) -> Tuple[List[float|int], bool, int]:
         """Reads a sample from the data collection sub
 
         Args:
@@ -272,6 +272,7 @@ class KUKA_DataReader:
 
         # Flag indicating the state of the collection
         self._read_done = False
+        trace_stoped = False
         
         while self._read_done != 1 :
             
@@ -310,7 +311,8 @@ class KUKA_DataReader:
 
             else:
                 # Sleeping to wait for the next data to be sampled, stop de trace if robot movement done
-                if self._read_done == 2:
+                if self._read_done == 2 and not(trace_stoped):
+                    trace_stoped = True
                     self.trace.Trace_Stop()
                 sleep(self.rate/2)
         
@@ -338,7 +340,7 @@ class KUKA_DataReader:
             Tuple[pd.DataFrame, int]: The collected data and the number of samples
         """        
 
-        data_trace = self.trace.Trace_Download(dir, True)
+        data_trace = self.trace.Trace_Download(dir, False)
         
         dataset_length = len(data_trace['Sample'])
         data_trace['Speed'] = [f'{speed}%'] * dataset_length
@@ -420,8 +422,8 @@ class KUKA_DataReader:
             
             # KUKA Trace
             if self.tracing:
-                self.trace.Trace_Stop()
-                sleep(0.1)
+                # self.trace.Trace_Stop()
+                sleep(5)
                 data_trace, _ = self.get_trace_data(speed, load, trace_sampling, temp_dir)
 
             # Indicating the end of this run

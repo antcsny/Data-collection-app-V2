@@ -119,8 +119,8 @@ class UI_Data (sg.Frame):
             if '_A1' in col: # sorting the variables per axis
                 colname = col.rsplit('_A1', 1)[0] 
                 self._var_totrace.append(colname)
-                self.var_checkbox.append(sg.Checkbox('Motor ' + colname, enable_events=True, default=True, key=f'-varplot_cbx{i}-'))
+                self.var_checkbox.append(sg.Checkbox('Motor ' + colname, enable_events=True, default=False, key=f'-varplot_cbx{i}-'))
                 win.extend_layout(win['-col_var_to_plot-'], [[sg.pin(sg.Col([[self.var_checkbox[i]]], key=f'-varplot_line{i}-', pad=(1,0.2)))]])
-                self._do_trace_var.append(True)
+                self._do_trace_var.append(False)
                 i+=1
     
