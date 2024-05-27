@@ -340,22 +340,17 @@ class KUKA_DataReader:
             Tuple[pd.DataFrame, int]: The collected data and the number of samples
         """        
 
-        data_trace = self.trace.Trace_Download(dir, False)
+        data_trace = self.trace.Trace_Download()
         
-        dataset_length = len(data_trace['Sample'])
-        data_trace['Speed'] = [f'{speed}%'] * dataset_length
+        dataset_length = len(data_trace['Sample_time'])
+        data_trace['Speed'] = [int(speed)] * dataset_length
 
         if load == 0:
             data_trace['Faulty'] = [0] * dataset_length
         else:
             data_trace['Faulty'] = [1] * dataset_length
         
-        for index in range(len(data_trace['Main Category'])):
-            if data_trace['Main Category'][index] == 0:
-                data_trace['Main Category'][index] = load
-
-        del data_trace['Sample']
-        data_trace['Sample'] = [ sampling * (i + sampling_offset) for i in range(dataset_length) ]
+        data_trace['Load'] = [load] * dataset_length
 
         return (pd.DataFrame(data_trace), dataset_length)
 
@@ -408,7 +403,8 @@ class KUKA_DataReader:
                 lock.acquire()
             
             # KUKA Trace
-            file_name = now + f"[{speed}]"
+            cell = self.handler.ipAddress.split(".")[3][-1]
+            file_name = now + f"[{speed}]_R{cell}"
             self.trace.Trace_Config([ file_name, trace_config , "600" ])
             self.tracing = self.trace.Trace_Start()
             if self.tracing:
@@ -423,7 +419,7 @@ class KUKA_DataReader:
             # KUKA Trace
             if self.tracing:
                 # self.trace.Trace_Stop()
-                sleep(5)
+                # sleep(5)
                 data_trace, _ = self.get_trace_data(speed, load, trace_sampling, temp_dir)
 
             # Indicating the end of this run
@@ -455,7 +451,8 @@ class KUKA_DataReader:
             print(f"Run with speed {start}")
             
             # KUKA Trace
-            file_name = now + f"[{start}]"
+            cell = self.handler.ipAddress.split(".")[3][-1]
+            file_name = now + f"[{start}]_R{cell}"
             self.trace.Trace_Config([file_name, trace_config, "600"])
             self.tracing = self.trace.Trace_Start()
             if self.tracing:
@@ -472,7 +469,7 @@ class KUKA_DataReader:
             if self.tracing:
                 self.trace.Trace_Stop()
                 sleep(0.1)
-                data_trace, size = self.get_trace_data(speed, load, trace_sampling, temp_dir, trace_offset)
+                data_trace, size = self.get_trace_data(start, load, trace_sampling, temp_dir, trace_offset)
                 
                 # Updating the offset
                 trace_offset += size

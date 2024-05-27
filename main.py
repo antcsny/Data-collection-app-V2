@@ -217,7 +217,7 @@ class MainProgram (MainWindow):
         try:
             self.dataframe = pd.read_excel(path)
             self.data.update_layout_on_columns(self, self.dataframe.columns)
-            self.dataframe['Sample_time_s'] = self.dataframe['Sample']/1000 if 'TRACE' in path else self.dataframe['Sample_time']/1000
+            self.dataframe['Sample_time_s'] = self.dataframe['Sample_time']/1000
             sg.popup("Done")
             self.data.enable_plot_buttons(True)
         except Exception as e:
