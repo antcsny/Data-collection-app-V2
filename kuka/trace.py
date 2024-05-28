@@ -138,6 +138,8 @@ class KUKA_Trace:
             self.rob_instance.KUKA_WriteVar('$TRACE.MODE', '#T_STOP')
         if self.rob_instance.KUKA_ReadVar('$TRACE.STATE') in [b'#T_END', b'#T_WRITING']:
             print('Trace stopped')
+        else:
+            print("Failed to stop the trace")
 
     def Trace_State(self):
         """
@@ -172,7 +174,6 @@ class KUKA_Trace:
 
         return result
 
-
     def translate (self, value: str) -> str:
 
         if value in self.translations:
@@ -203,7 +204,6 @@ class KUKA_Trace:
                 dest = self.dest_folder.joinpath(file)
                 shutil.copyfile(src, dest)
                 src.unlink()
-
 
     def find_pairs (self, name: str):
 
@@ -344,17 +344,15 @@ class KUKA_Trace:
             data.append((dat, r64))
 
         min_sampling = data[0][0].sampling
-        max_sampling = data[0][0].sampling
-        min_length = data[0][0].length
         for d in data:
             min_sampling = min(d[0].sampling, min_sampling)
-            max_sampling = max(d[0].sampling, max_sampling)
-            min_length = min(d[0].length, min_length)
 
-        ratio = int(max_sampling // min_sampling)
-        length = min_length * ratio
+        min_length = 12e9
+        for d in data:
+            ratio = int(d[0].sampling // min_sampling)
+            min_length = min(d[0].length * ratio, min_length)
 
-        print(length, ratio, min_sampling, max_sampling, min_length)
+        length = min_length
 
         dataframe = pd.DataFrame()
 

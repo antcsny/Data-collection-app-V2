@@ -4,6 +4,7 @@ import pandas as pd
 from typing import Callable, List, Tuple
 from threading import Semaphore
 from datetime import datetime
+import numpy as np
 
 from .handler import KUKA_Handler
 from .trace import KUKA_Trace
@@ -352,6 +353,11 @@ class KUKA_DataReader:
         
         data_trace['Load'] = [load] * dataset_length
 
+        sampling = sampling / 1000
+        print(sampling, sampling_offset * sampling)
+
+        # data_trace["Sample_time"] += (sampling_offset * sampling)
+
         return (pd.DataFrame(data_trace), dataset_length)
 
     def acquire (
@@ -419,7 +425,7 @@ class KUKA_DataReader:
             # KUKA Trace
             if self.tracing:
                 # self.trace.Trace_Stop()
-                # sleep(5)
+                sleep(1)
                 data_trace, _ = self.get_trace_data(speed, load, trace_sampling, temp_dir)
 
             # Indicating the end of this run
@@ -468,7 +474,7 @@ class KUKA_DataReader:
             # KUKA Trace
             if self.tracing:
                 self.trace.Trace_Stop()
-                sleep(0.1)
+                sleep(1)
                 data_trace, size = self.get_trace_data(start, load, trace_sampling, temp_dir, trace_offset)
                 
                 # Updating the offset
@@ -486,6 +492,10 @@ class KUKA_DataReader:
             start += step 
 
         # Merging the results for each speed into one monolithic DataFrame for each method
-        return pd.concat(dataframes), pd.concat(trace_dataframes)
+        sys_data = pd.concat(dataframes)
+        trace_data = pd.concat(trace_dataframes)
+        trace_data["Sample_time"] = np.arange(len(trace_data["Sample_time"])) * (trace_sampling / 1000)
+
+        return sys_data, trace_data 
     
         ## --------------------------------- ##
