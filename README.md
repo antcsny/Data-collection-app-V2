@@ -6,23 +6,37 @@ the KUKA Trace module.
 
 ![Robot Image](./images/KUKA.jpg)
 
-For each of the 6 motors, the following variables are measured:
+For each of the 6 motors, the following variables are measured by system variables:
 - Position
 - Torque
 - Current draw
 - Temperature
 
-This program tries to collect the data in real time. The main latency factor is
-the network quality. An ethernet connection is preffered over Wi-Fi. The data
+This collects the data in real time with system variables. The main latency factor is
+the network quality, so an ethernet connection is preffered over Wi-Fi. The data
 is buffered on the robot side but has a hard-coded limit of 20000 samples. 
 The sampling rate has to be configured in accordance of the length of an 
 acquisition and with the network connection quality.
 
+Besides the system variables, the robot controler can measure the traces of the robot.
+It is a way intended by KUKA to recover data from the robot, that can measure the folowwing variables :
+- Position : Command, measured, error
+- Velocity error
+- Torque
+- Temperature
+- Current
+
+At the end of a measure sequence, tha traces are recovered from the network and saved in local to bea accessible.
+KUKA Traces data is in binary format (.r64), with .dat, .trc and .txt associated.
+Each motor has it's own file in that format, python will convert all the files and concatenate them to
+return a readable file, as excel or csv. Note that you have to setup the network access to the robot
+controler before launching this program to be able to recover the traces.
+
 The data is acquired from a full-range motion of a motor. Each motor moves 
 independently from each other.
 
-The data collected by the program can be found in the data folder, 
-each data file having an explicit name with the date of the colelction 
+The data collected by the program can be found in the /data folder, 
+each data file having an explicit name with the date of the collection 
 and details on the configuration.
 
 **Example** : 
@@ -33,10 +47,20 @@ and details on the configuration.
 
 **NB** : _The file obtained using KUKA Trace has a `_TRACE` suffix_
 
+## Measure Sequence
+
+A measure sequence consists of a repetirion of axis movement. The numer of iterations is variable and
+defined by the user before launching the sequence. The speed of the robot can also be modified to test 
+the robot movement in diferent stress conditions. As data is recovered in time, this data collector has
+a sampling rate. For the system variables, it varies from 12 to 60 milliseconds by a step of 12, the minimum
+of time the KRL program can measure from internal timers.
+KUKA traces provide a sampling rate from 1, 4 and 12ms, but oly the two last ones are implemented in this code
+Traces time sampling is more reliable than global variables.
+
 Summary
 ---
 
-- [UI Description](#ui-description)
+- [UI Description and details](#ui-description-and-details)
     - [Collection settings](#collection-settings)
     - [KUKA traces](#kuka-traces)
     - [Robots loads](#robots-loads)
@@ -50,7 +74,7 @@ Summary
     - [KUKA Trace Configuration](#kuka-trace-configuration)
     - The `Axis_Main.src` program
 
-## UI Description
+## UI Description and details
 
 The User interface is divided in 6 functions.
 

@@ -279,6 +279,9 @@ class KUKA_DataReader:
             
             # Getting our sample
             data, self._data_available, self._read_done = self.read(now, load)
+            if self._read_done == 2 and not(trace_stoped): # stop de trace if robot movement done
+                trace_stoped = True
+                self.trace.Trace_Stop()
             
             # Checking if some data is available
             if (self._data_available):
@@ -311,10 +314,7 @@ class KUKA_DataReader:
                 sleep(self.rate/2)
 
             else:
-                # Sleeping to wait for the next data to be sampled, stop de trace if robot movement done
-                if self._read_done == 2 and not(trace_stoped):
-                    trace_stoped = True
-                    self.trace.Trace_Stop()
+                # Sleeping to wait for the next data to be sampled
                 sleep(self.rate/2)
         
         # Creating a data frame
