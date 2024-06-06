@@ -46,6 +46,9 @@ class UI_Collection_Settings (sg.Frame):
 
         self._robot_selector = [ sg.Button(f"Robot {i}", key=f"-rob_select:{i}-") for i in range(1,4) ]
 
+        self.docollect_sysvar = sg.Checkbox('Enable Sysvar', key='-docollect_sysvar-', size=(15, 1), default=False)
+        self.docollect_trace = sg.Checkbox('Enable Kuka Traces', key='-docollect_trace-', size=(15, 1), default=True)
+        
         self._layout = [
             [ sg.Text("Dataset name :"), self._input_dataset_name, sg.Button("Auto Name", key="-dataset_auto-name-", font=("Consolas", 10)) ],
             [ sg.Text("Working directory :"), self._input_working_dir, self._input_browse_dir ],
@@ -57,7 +60,8 @@ class UI_Collection_Settings (sg.Frame):
                 sg.Text("% To :"),          self._input_max_speed,
                 sg.Text("% Step :"),      self._input_speed_step
             ],
-            [ sg.Text("Selected robots : "), sg.Push(), *self._robot_selector ]
+            [ sg.Text("Selected robots : "), sg.Push(), *self._robot_selector ],
+            [ sg.Text("Colelction methods to use : "), self.docollect_sysvar, self.docollect_trace ]
         ]
         return self._layout
     

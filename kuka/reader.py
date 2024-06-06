@@ -28,6 +28,9 @@ class KUKA_DataReader:
     _read_done = False
     _data_available = False
     _speed = 0
+    
+    _dosysvar = False
+    _dotrace = False
 
     # The columns order of the read data, used to create the DataFrame
     _columns = [
@@ -55,7 +58,7 @@ class KUKA_DataReader:
     __TAB1_DATA_AVAILABLE = 34
     __TAB1_DONE = 35
 
-    def __init__(self, handler: KUKA_Handler) -> None:
+    def __init__(self, handler: KUKA_Handler, dosysvar: bool, dotrace: bool) -> None:
         """Creates a new Data Reader
 
         Args:
@@ -63,10 +66,12 @@ class KUKA_DataReader:
         """        
 
         self.handler = handler
+        self._dosysvar = dosysvar
+        self._dotrace = dotrace
 
         # KUKA TRACE
         self.trace = KUKA_Trace(handler)
-        self.trace.Trace_Enable(True)
+        self.trace.Trace_Enable(self._dotrace)
 
     def __read (self, name: str, default = None):
         """Tries to read a value from the C3 interface, or returns a default
@@ -88,23 +93,10 @@ class KUKA_DataReader:
     ### This section defines setter/getters to change the variables used by ###
     ### the data collector sub                                              ###
 
-    ## ColRUN
-    @property
-    def ColRUN (self) -> bool:
-        return self.__read("ColRUN", False)
-    
-    @ColRUN.setter
-    def ColRUN (self, value: bool):
-        self.handler.KUKA_WriteVar("ColRUN", value)
-
     ## PyDONE
     @property
     def PyDONE (self) -> bool:
         return self.__read("PyDONE", False)
-    
-    @PyDONE.setter
-    def PyDONE (self, value: bool):
-        self.handler.KUKA_WriteVar("PyDONE", value)
 
     ## __PYTHON_HAS_READ
     @property
@@ -232,20 +224,20 @@ class KUKA_DataReader:
 
         self.handler.KUKA_WriteVar('PySPEED', speed)
         self._speed = int(speed)
-        self.handler.KUKA_WriteVar('ColSAMPLING', sampling)
-
-        # Waiting for Reset
-        self.handler.KUKA_WriteVar('ColRESET', True)
-        sleep(0.1)
-        while not self.handler.KUKA_ReadVar('ColRESET_DONE'):
-            sleep(0.2)
-
-        sleep(0.5)
+        if self._dosysvar:
+            self.handler.KUKA_WriteVar('ColSAMPLING', sampling)
+            # Waiting for Reset
+            self.handler.KUKA_WriteVar('ColRESET', True)
+            sleep(0.1)
+            while not self.handler.KUKA_ReadVar('ColRESET_DONE'):
+                sleep(0.2)
+            sleep(0.5)
+            self.handler.KUKA_WriteVar('ColRUN', True)
+        
         self.handler.KUKA_WriteVar('PyRUN', True)
-        self.handler.KUKA_WriteVar('ColRUN', True)
         sleep(0.1)
 
-    def run (
+    def run_sysvar (
             self, 
             next: Callable[[float, int, int], None] = None, 
             load: int = -1
@@ -354,12 +346,52 @@ class KUKA_DataReader:
         data_trace['Load'] = [load] * dataset_length
 
         sampling = sampling / 1000
-        print(sampling, sampling_offset * sampling)
-
+        # print(sampling, sampling_offset * sampling)
         # data_trace["Sample_time"] += (sampling_offset * sampling)
 
-        return (pd.DataFrame(data_trace), dataset_length)
-
+        return pd.DataFrame(data_trace)
+    
+    def run_single_speed (self, A_iter, speed, sampling, load, lock, now, trace_config, trace_sampling, temp_dir, trace_offset):
+        # Sync with other robots
+        if lock is not None:
+            lock.acquire()
+        
+        # Print current speed to the terminal    
+        print(f"Run with speed {speed}")
+        
+        cell = self.handler.ipAddress.split(".")[3][-1]
+        file_name = now + f"[{speed}]_R{cell}"
+        
+        # KUKA Trace setup
+        if self._dotrace:
+            self.trace.Trace_Config([ file_name, trace_config , "600" ])
+            self.tracing = self.trace.Trace_Start()
+            if self.tracing:
+                print("Trace start for " + self.handler.ipAddress)
+            else:
+                print("Could not start trace for " + self.handler.ipAddress)
+        
+        # Robot init and launch
+        self.init(A_iter, speed, sampling)
+        
+        # KRL System Variables collection
+        data_vars = self.run_sysvar(next, load) if self._dosysvar else None
+        
+        # KUKA Trace collection
+        data_trace = None
+        if self._dotrace:
+            if not self._dosysvar :
+                # check PyDONE robot variable to stop the trace, as it is done in sysvar collection method
+                while self.PyDONE !=True:
+                    sleep(0.1)
+                self.trace.Trace_Stop()
+            if self.tracing:
+                sleep(1)
+                data_trace = self.get_trace_data(speed, load, trace_sampling, temp_dir, trace_offset)
+        
+        # Returning the two collected DataFrames
+        return data_vars, data_trace
+        
     def acquire (
             self, 
             A_iter: List[str], 
@@ -367,7 +399,6 @@ class KUKA_DataReader:
             sampling: str, 
             trace_config = "12_ms",
             next: Callable[[float], None] = None, 
-            done: Callable = None,
             load: int = -1,
             lock: Semaphore = None,
             temp_dir: str = None
@@ -380,15 +411,14 @@ class KUKA_DataReader:
             sampling (str): The system variables sampling time
             trace_config (str, optional): The trace configuration file name. Defaults to "12_ms".
             next (Callable[[float], None], optional): A function used to update the user interface in order to show the current progress. Defaults to None.
-            done (Callable, optional): A function which is called at the end of a run. Used to sync multiple robots. Defaults to None.
             load (int, optional): The dataset class. Defaults to -1.
             lock (Semaphore, optional): A lock used to sync multiple robots. Defaults to None.
             temp_dir (str, optional): The folder in which to store the files to process. Defaults to None.
 
         Returns:
             Tuple[pd.DataFrame, pd.DataFrame]: The system variables Dataframe and the Kuka Trace DataFrame
-        """        
-
+        """
+        
         # Reset the sub
         self.reset()
 
@@ -403,38 +433,7 @@ class KUKA_DataReader:
 
         ## ---- Run for a single speed ---- ##
         if type(speed) == str or type(speed) == int:
-
-            # Sync with other robots
-            if lock is not None:
-                lock.acquire()
-            
-            # KUKA Trace
-            cell = self.handler.ipAddress.split(".")[3][-1]
-            file_name = now + f"[{speed}]_R{cell}"
-            self.trace.Trace_Config([ file_name, trace_config , "600" ])
-            self.tracing = self.trace.Trace_Start()
-            if self.tracing:
-                print("Trace start for " + self.handler.ipAddress)
-            else:
-                print("Could not start trace for " + self.handler.ipAddress)
-
-            # KRL System Variables
-            self.init(A_iter, speed, sampling)
-            data_vars = self.run(next, load)
-            
-            # KUKA Trace
-            if self.tracing:
-                # self.trace.Trace_Stop()
-                sleep(1)
-                data_trace, _ = self.get_trace_data(speed, load, trace_sampling, temp_dir)
-
-            # Indicating the end of this run
-            if done is not None:
-                done()
-            
-            # Returning the two collected DataFrames
-            return data_vars, data_trace
-        ## -------------------------------- ##
+            return self.run_single_speed(A_iter, speed, sampling, load, lock, now, trace_config, trace_sampling, temp_dir, 0)
 
         ## ---- Run for multiple speeds ---- ##
 
@@ -443,59 +442,34 @@ class KUKA_DataReader:
         stop = speed.stop if speed.stop is not None else start
        
         # Buffers 
-        dataframes = []
+        sysvar_dataframes = []
         trace_dataframes = []
         trace_offset = 0
-
+        data_sysvar : pd.DataFrame = None
+        data_trace : pd.DataFrame = None
+        
         while start <= stop:
-
-            # Sync with other robots
-            if lock is not None:
-                lock.acquire()
-            
-            # Print current speed to the terminal
-            print(f"Run with speed {start}")
+            data_sysvar, data_trace = self.run_single_speed(A_iter, start, sampling, load, lock, now, trace_config, trace_sampling, temp_dir, trace_offset)
             
             # KUKA Trace
-            cell = self.handler.ipAddress.split(".")[3][-1]
-            file_name = now + f"[{start}]_R{cell}"
-            self.trace.Trace_Config([file_name, trace_config, "600"])
-            self.tracing = self.trace.Trace_Start()
-            if self.tracing:
-                print("Trace start for " + self.handler.ipAddress)
-            else:
-                print("Could not start trace for " + self.handler.ipAddress)
-
-            # KRL System Variables
-            self.init(A_iter, start, sampling)
-            self.LAST_RUN = start == stop
-            df = self.run(next, load)  
-            
-            # KUKA Trace
-            if self.tracing:
-                self.trace.Trace_Stop()
-                sleep(1)
-                data_trace, size = self.get_trace_data(start, load, trace_sampling, temp_dir, trace_offset)
-                
+            if self.tracing and self._dotrace:
                 # Updating the offset
-                trace_offset += size
+                trace_offset += data_trace.shape[0]
 
                 # Storing the resulting DataFrame in the buffer
                 trace_dataframes.append(data_trace)
-
-            # Indicating that this run is done
-            if done is not None:
-                done()
             
             # Storing the resulting DataFrame in the buffer
-            dataframes.append(df)  
+            if self._dosysvar:
+                sysvar_dataframes.append(data_sysvar)  
             start += step 
 
         # Merging the results for each speed into one monolithic DataFrame for each method
-        sys_data = pd.concat(dataframes)
-        trace_data = pd.concat(trace_dataframes)
-        trace_data["Sample_time"] = np.arange(len(trace_data["Sample_time"])) * (trace_sampling / 1000)
+        sys_data = pd.concat(sysvar_dataframes) if self._dosysvar else None
+        if self._dotrace:
+            trace_data = pd.concat(trace_dataframes)
+            trace_data["Sample_time"] = np.arange(len(trace_data["Sample_time"])) * (trace_sampling / 1000)
+        else:
+            trace_data = None
 
         return sys_data, trace_data 
-    
-        ## --------------------------------- ##

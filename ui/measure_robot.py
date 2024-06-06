@@ -17,11 +17,13 @@ class Measure_robot (CollectionGraphWindow):
 
     # Collected data
     data = None
+    dosysvar = False
+    dotrace = False
 
     # Latency data [Not used]
     latencies = np.zeros(0)
 
-    def __init__ (self, handler: KUKA_Handler, cell: int, file_prefix: str, temp_dir: str = ".\\temp"):
+    def __init__ (self, handler: KUKA_Handler, cell: int, dosysvar: bool, dotrace: bool, file_prefix: str, temp_dir: str = ".\\temp"):
         """Creates a new measurement window
 
         Args:
@@ -32,10 +34,12 @@ class Measure_robot (CollectionGraphWindow):
         """        
         
         super().__init__(cell)
+        self._dosysvar = dosysvar
+        self._dotrace = dotrace
 
         self.cell = cell
         self.name = f"Robot {cell}"
-        self.reader = KUKA_DataReader(handler)
+        self.reader = KUKA_DataReader(handler, dosysvar, dotrace)
         self.file_prefix = file_prefix
         self.temp_dir = temp_dir
         
@@ -86,7 +90,7 @@ class Measure_robot (CollectionGraphWindow):
             self.latencies = np.append(self.latencies, latency)
 
         try:
-            self.data, self.trace_data = self.reader.acquire(A_iter, speed, sampling, trace_sampling, next, done, load, lock, self.temp_dir)            
+            self.data, self.trace_data = self.reader.acquire(A_iter, speed, sampling, trace_sampling, next, load, lock, self.temp_dir)            
             self.collecting_data_done = True
             # print("Moyenne Tps Reponse : ",self.data["Read_time"].mean())
             # print("Moyenne Essais : ",self.data["Read_tries"].mean())
@@ -110,8 +114,12 @@ class Measure_robot (CollectionGraphWindow):
             return
 
         try:
-            self.data.to_excel(file_name)
-            self.trace_data.to_excel(trace_file_name)
+            if self._dosysvar and self.data is not None:
+                self.data.to_excel(file_name)
+                print("Successfully stored collected system variables")
+            if self._dotrace and self.trace_data is not None:
+                self.trace_data.to_excel(trace_file_name)
+                print("Successfully stored collected kuka traces")
             self.storing_data_done = True
         except Exception as e:
             traceback.print_exception(e)

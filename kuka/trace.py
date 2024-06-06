@@ -128,6 +128,7 @@ class KUKA_Trace:
             else:
                 print(f'Error in trace configuration {self.config}')
                 return False
+        return False
 
     def Trace_Stop(self):
         """
@@ -136,25 +137,26 @@ class KUKA_Trace:
         """
         if self.enable:
             self.rob_instance.KUKA_WriteVar('$TRACE.MODE', '#T_STOP')
-        if self.rob_instance.KUKA_ReadVar('$TRACE.STATE') in [b'#T_END', b'#T_WRITING']:
-            print('Trace stopped')
-        else:
-            print("Failed to stop the trace")
+            if self.rob_instance.KUKA_ReadVar('$TRACE.STATE') in [b'#T_END', b'#T_WRITING']:
+                print('Trace stopped')
+            else:
+                print("Failed to stop the trace")
 
     def Trace_State(self):
         """
         :return: Returns string containing current state of trace recording
         """
-        state_raw = self.rob_instance.KUKA_ReadVar('$TRACE.STATE')
-        match state_raw:
-            case b'#T_END':
-                return 'No recording is currently running.'
-            case b'#TRIGGERED':
-                return 'Recording in progress'
-            case b'#T_WAIT':
-                return 'Waiting for the trigger'
-            case b'#T_WRITING':
-                return 'The recorded new_data are written to the hard drive.'
+        if self.enable:
+            state_raw = self.rob_instance.KUKA_ReadVar('$TRACE.STATE')
+            match state_raw:
+                case b'#T_END':
+                    return 'No recording is currently running.'
+                case b'#TRIGGERED':
+                    return 'Recording in progress'
+                case b'#T_WAIT':
+                    return 'Waiting for the trigger'
+                case b'#T_WRITING':
+                    return 'The recorded new_data are written to the hard drive.'
 
     def Trace_Ended(self):
         """
@@ -168,14 +170,12 @@ class KUKA_Trace:
                 return False
 
     def Trace_Download(self):
-        
-
-        result = self.read_traces(self.name)
-
-        return result
+        if self.enable:
+            result = self.read_traces(self.name)
+            return result
+        return None
 
     def translate (self, value: str) -> str:
-
         if value in self.translations:
             return self.translations[value]
         

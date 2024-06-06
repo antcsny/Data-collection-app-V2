@@ -47,19 +47,9 @@ and details on the configuration.
 
 **NB** : _The file obtained using KUKA Trace has a `_TRACE` suffix_
 
-## Measure Sequence
-
-A measure sequence consists of a repetirion of axis movement. The numer of iterations is variable and
-defined by the user before launching the sequence. The speed of the robot can also be modified to test 
-the robot movement in diferent stress conditions. As data is recovered in time, this data collector has
-a sampling rate. For the system variables, it varies from 12 to 60 milliseconds by a step of 12, the minimum
-of time the KRL program can measure from internal timers.
-KUKA traces provide a sampling rate from 1, 4 and 12ms, but oly the two last ones are implemented in this code
-Traces time sampling is more reliable than global variables.
-
 Summary
 ---
-
+- [Measure Sequence](#measure-sequence)
 - [UI Description and details](#ui-description-and-details)
     - [Collection settings](#collection-settings)
     - [KUKA traces](#kuka-traces)
@@ -74,11 +64,22 @@ Summary
     - [KUKA Trace Configuration](#kuka-trace-configuration)
     - The `Axis_Main.src` program
 
+## Measure Sequence
+
+One measure run consists of a repetition of axis movement at a given speed. The numer of iterations by axis is variable and is defined by the user before launching the sequence. The speed of the robot can be modified to test the robot movement in diferent stress conditions.\
+As data is recovered in time, this data collector has
+a sampling rate. For the system variables, it varies from 12 to 60 milliseconds by a step of 12, the minimum
+of time the KRL program can measure from internal timers.
+KUKA traces provide a sampling rate from 1, 4 and 12ms, but oly the two last ones are implemented in this code.
+Traces time sampling is more reliable than global variables.
+
 ## UI Description and details
 
-The User interface is divided in 6 functions.
+As shown on the image below, the User Interface is divided in main 6 functions.
 
 ![GUI Screenshot](./images/GUI.png)
+
+The PysimpleGUI librairy used in this application provide easy access to basic components of a gui, called widjets. For example, we can use buttons, keyboard input, checkboxes and combos. Combos are a way to give the user a visual choice on a variable. Note that all PysimpleGUI widjets give the possibility to run an action when an event occurs from it. Events are treated in the main loop of the program, and are defined as text by the programmer for each widjet. 
 
 ### Collection settings
 
@@ -92,13 +93,15 @@ The following parameters can be configured:
 Due to software limitations from the KRL environment, the sampling rate is
 bound to be a multiple of 12. 
 
-The speed of the motors movement varies from min to max with the specified step.
+The speed of the motors during the acquisition varies according to the confifuration.
 This value is defined as a percentage of the max value (i.e. 0 to 100). 
-The speed range can be set to constant and thus only one acquisition is made. 
+By default, the 'Constant' checkbox is set to true. It means that the robot speed will be constant for the whole test and thus only one acquisition is made. By clicking on the checkbox, it allows the user to set a range of speeds for the test, from minimum to maximum by a step.\
+A test at multiple speed is equivalent to the merge of multiple single speed runs. So, check the configurations before launching an acquisition, even if it is able to stop between the runs if a problem has occurred. \
+During a run at multple speed, system variables and KUKA traces are runing. To minimize data loss, we wait for each collection method to finish its process to start the next run.
 
 ### KUKA traces
 
-This selectors is used to select the KUKA Trace configuration that will be 
+A combo selector is used to select the KUKA Trace configuration that will be 
 run along side of the system variable collection. The collected data is the same
 as with the system variables but with more precision and reliability. 
 The acquisition is done by the RTOS of the robot.

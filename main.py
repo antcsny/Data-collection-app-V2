@@ -74,7 +74,10 @@ class MainProgram (MainWindow):
         self.data.disabled = disabled
                 
         self.collection_settings.update_robot_buttons()
-
+        
+    def collection_methods (self):
+        pass
+    
     def done (self):
         """Called when a robot has collected the samples for a run. 
         Unlocks the syncing mechanism if all robots are done
@@ -108,6 +111,13 @@ class MainProgram (MainWindow):
         if not self.collection_settings.check_configuration():
             print("Failed to run the collection : invalid configuration")
             return
+        
+        dosysvar_method = bool(self.collection_settings.docollect_sysvar.get())
+        dotrace_method = bool(self.collection_settings.docollect_sysvar.get())
+        # Check if one collection method is selected
+        if not dosysvar_method and not dotrace_method:
+            print("No collection method selected")
+            return
 
         # Creating the file names
         file_path = values["-user_path-"] + "/" + values["-dataset_name-"]
@@ -119,7 +129,7 @@ class MainProgram (MainWindow):
         for i in range(len(self.robot_handlers)):
             r = self.robot_handlers[i]
             if r is not None:
-                self.robot_windows.append(Measure_robot(r, i + 1, file_path))
+                self.robot_windows.append(Measure_robot(r, i + 1, dosysvar_method, dotrace_method, file_path))
 
         # Initializing the sync mechanism
         self.sync_number = len(self.robot_windows)
