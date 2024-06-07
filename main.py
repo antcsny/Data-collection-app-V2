@@ -113,7 +113,7 @@ class MainProgram (MainWindow):
             return
         
         dosysvar_method = bool(self.collection_settings.docollect_sysvar.get())
-        dotrace_method = bool(self.collection_settings.docollect_sysvar.get())
+        dotrace_method = bool(self.collection_settings.docollect_trace.get())
         # Check if one collection method is selected
         if not dosysvar_method and not dotrace_method:
             print("No collection method selected")

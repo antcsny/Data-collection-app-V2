@@ -90,7 +90,7 @@ class Measure_robot (CollectionGraphWindow):
             self.latencies = np.append(self.latencies, latency)
 
         try:
-            self.data, self.trace_data = self.reader.acquire(A_iter, speed, sampling, trace_sampling, next, load, lock, self.temp_dir)            
+            self.data, self.trace_data = self.reader.acquire(A_iter, speed, sampling, trace_sampling, next, done, load, lock, self.temp_dir)            
             self.collecting_data_done = True
             # print("Moyenne Tps Reponse : ",self.data["Read_time"].mean())
             # print("Moyenne Essais : ",self.data["Read_tries"].mean())
@@ -108,18 +108,16 @@ class Measure_robot (CollectionGraphWindow):
 
         file_name = self.file_name + ".xlsx"
         trace_file_name = self.file_name + "_TRACE" + ".xlsx"
-
-        if self.data is None:
-            print(self.name + " failed to collect data")
-            return
-
+        
         try:
             if self._dosysvar and self.data is not None:
                 self.data.to_excel(file_name)
-                print("Successfully stored collected system variables")
+                print("Successfully stored system variables from " + self.name)
             if self._dotrace and self.trace_data is not None:
                 self.trace_data.to_excel(trace_file_name)
-                print("Successfully stored collected kuka traces")
+                print("Successfully stored kuka traces from " + self.name)
+            if (self._dosysvar and self.data is None) or (self._dotrace and self.trace_data is None):
+                print(self.name + " failed to collect data")
             self.storing_data_done = True
         except Exception as e:
             traceback.print_exception(e)

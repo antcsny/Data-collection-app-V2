@@ -123,7 +123,6 @@ class KUKA_Trace:
             self.rob_instance.KUKA_WriteVar('$TRACE.MODE', '#T_START')
             sleep(0.2)
             if self.rob_instance.KUKA_ReadVar('$TRACE.STATE') in [b'#T_WAIT', b'#TRIGGERED']:
-                print('Trace is running')
                 return True
             else:
                 print(f'Error in trace configuration {self.config}')
