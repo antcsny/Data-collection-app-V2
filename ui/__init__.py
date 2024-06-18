@@ -1,3 +1,5 @@
+# import python classes from the folder ui
+
 from .ui_collection_settings import UI_Collection_Settings
 from .ui_data import UI_Data
 from .ui_gripper import UI_Gripper

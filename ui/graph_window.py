@@ -6,8 +6,9 @@ from threading import Semaphore
 class CollectionGraphWindow (sg.Window):
     
     lock = Semaphore(1)
+    enable = True
 
-    def __init__(self, cell: int):
+    def __init__(self, cell: int, enable: True):
         """ : Class constructor
         With __make_layout, generate a pysimplegui window to be shown when a colelction sequence on a robot is lauched
         give a dynamic view of the robot buffer fill level and sample latency with plot
@@ -20,41 +21,47 @@ class CollectionGraphWindow (sg.Window):
         self._data_latency = []
 
         self._s = 0
+        self.enable = enable
         
         super().__init__(f'Robot {cell}', self.__make_layout(), finalize=True)
         
-        # Canvas settings
-        self._canvas = self._canvas_elem.TKCanvas
-        self._figure: Figure = Figure()
-        self._ax = self._figure.add_subplot(2, 1, 1)
-        self._ay = self._figure.add_subplot(2, 1, 2)
+        # Canvas settings enabled if system variables are collected
+        if self.enable:
+            self._canvas = self._canvas_elem.TKCanvas
+            self._figure: Figure = Figure()
+            self._ax = self._figure.add_subplot(2, 1, 1)
+            self._ay = self._figure.add_subplot(2, 1, 2)
 
-        self._ax.set_xlabel("Sample")
-        self._ax.set_ylabel("Number of buffered values")
-        self._ax.grid()
+            self._ax.set_xlabel("Sample")
+            self._ax.set_ylabel("Number of buffered values")
+            self._ax.grid()
 
-        self._ay.set_xlabel("Sample")
-        self._ay.set_ylabel("Network latency (ms)")
-        self._ay.grid()
+            self._ay.set_xlabel("Sample")
+            self._ay.set_ylabel("Network latency (ms)")
+            self._ay.grid()
 
-        self._fig_agg = FigureCanvasTkAgg(self._figure, self._canvas)
-        self._fig_agg.draw()
-        self._fig_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+            self._fig_agg = FigureCanvasTkAgg(self._figure, self._canvas)
+            self._fig_agg.draw()
+            self._fig_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
         
     def __make_layout (self):
-        self._title = sg.Text(f'Robot {self.cell}', key="-TITLE-", font='Helvetica 20')
-        self._subtitle = sg.Text("Collecting sample n°...", key="Subtitle")
-        self._canvas_elem = sg.Canvas(size=(480,360), key="-CANVAS-")
-        self._status = sg.Text("",key="-colstatus-",text_color="#000", font="Helvetica 15")
+        self._title = sg.Text(f'Robot {self.cell}', key="-TITLE-", font='Helvetica 20', size=(20,3), justification='center')
+        self._subtitle = sg.Text("Collecting Data ...", key="Subtitle")
+        if self.enable:
+            self._canvas_elem = sg.Canvas(size=(480,360), key="-CANVAS-")
+        else:
+            self._canvas_elem = None
+        self._status = sg.Text("",key="-colstatus-", text_color="#000", font="Helvetica 15")
         self._exit = sg.Button("Exit", key='-colexit-',font="Helvetica 11", size=(15,1),button_color='#F0F0F0')
         
         layout = [
             [ sg.Push(), self._title, sg.Push() ],
             [ sg.Push(), self._subtitle, sg.Push() ],
-            [ self._canvas_elem ],
-            [ sg.Push(), self._status, sg.Push() ],
-            [ sg.Push(), self._exit, sg.Push() ]
         ]
+        if self.enable:
+            layout.append([ self._canvas_elem ])
+        layout.append([ sg.Push(), self._status, sg.Push() ])
+        layout.append([ sg.Push(), self._exit, sg.Push() ])
         return layout
         
     def add (self, buffer: int, latency: float):

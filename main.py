@@ -30,7 +30,7 @@ class MainProgram (MainWindow):
 
     ### ---- Methods ---- ###
     def __init__(self):
-        super().__init__()
+        super().__init__() # super : access to the inherited class MainWindow
 
         self.update_disabled_ui()
 
@@ -74,9 +74,6 @@ class MainProgram (MainWindow):
         self.data.disabled = disabled
                 
         self.collection_settings.update_robot_buttons()
-        
-    def collection_methods (self):
-        pass
     
     def done (self):
         """Called when a robot has collected the samples for a run. 
@@ -111,9 +108,11 @@ class MainProgram (MainWindow):
         if not self.collection_settings.check_configuration():
             print("Failed to run the collection : invalid configuration")
             return
-        
+
+        # Collection method choice 
         dosysvar_method = bool(self.collection_settings.docollect_sysvar.get())
         dotrace_method = bool(self.collection_settings.docollect_trace.get())
+        
         # Check if one collection method is selected
         if not dosysvar_method and not dotrace_method:
             print("No collection method selected")
@@ -204,7 +203,6 @@ class MainProgram (MainWindow):
     def gripper_open (self):
         """Tries to open the gripper of the selected robot
         """        
-
         if self.robot_handlers[self.gripper._robot_choice - 1] is not None:
             self.robot_handlers[self.gripper._robot_choice - 1].KUKA_WriteVar('PyOPEN_GRIPPER', True)
             self.gripper._btn_open.update(disabled=True)
@@ -219,8 +217,7 @@ class MainProgram (MainWindow):
             self.gripper._btn_close.update(disabled=True)
 
     def open_xlsx (self, path: str):
-        """Tries to load a .xslx file collected from the system variables
-
+        """Tries to load a .xslx file collected
         Args:
             path (str): The path to the file to open
         """        
@@ -235,18 +232,22 @@ class MainProgram (MainWindow):
             self.data.enable_plot_buttons(False)
 
     def trace_selected_variables (self):
+        """ plot the variables from the opened file selected by the checkboxes
+        """
         plt.close('all')
-        a = self.data.get_selected_axis()
-        if (len(a)==0):
+        axis = self.data.get_selected_axis()
+        if (len(axis)==0):
             sg.PopupOK("Select at least one axis to plot")
             return
         for i, var in enumerate(self.data._var_totrace):
             if(self.data._do_trace_var[i]):
-                self.dataframe.plot(x="Sample_time_s",y=[f"{var}_A{i}" for i in a], grid=True),plt.ylabel(f"Motor {var}")
+                self.dataframe.plot(x="Sample_time_s",y=[f"{var}_A{i}" for i in axis], grid=True),plt.ylabel(f"Motor {var}")
                 plt.tight_layout()
             plt.pause(0.1) # Alternative to plt.show() that is not blocking
 
     def trace_sampling (self):
+        """ plot the write and read index in buffers in robot controler memory, with network latency in the background
+        """
         self.dataframe.plot(x="Sample_time_s",y=["Queue_Read", "Queue_Write"], grid=True),plt.ylabel("Samples")
         plt.xlabel("Collection execution time (s)")
         plt.twinx(), plt.plot(self.dataframe["Sample_time_s"],self.dataframe['Read_time'], alpha=0.05), plt.ylabel("Request time of the sample (ms)")
@@ -255,15 +256,16 @@ class MainProgram (MainWindow):
         plt.show()
 
     def trace_latencies (self):
+        """ plot the network latency of each sample collected from system variables
+        """
         self.dataframe.hist(column='Read_time', grid=True, bins=30)
         plt.title("Distribution of the collection time of a sample")
         plt.xlabel(f"Request time (ms) : mean = {self.dataframe['Read_time'].mean().__round__(2)}"),plt.ylabel("Number of samples")
         plt.show()
 
     def run (self):
-        """Runs the main program
+        """Runs the pysimplegui loop
         """        
-
         while True:
 
             event, values = self.read(timeout=10)
@@ -279,6 +281,7 @@ class MainProgram (MainWindow):
                     self[f'num_of_iter{i}'].update(value=values['num_of_iter1'])
 
             if event == '-BTN_start-':
+                # start measure sequence
                 self.start(values)
 
             if event == "-dataset_auto-name-":
@@ -322,6 +325,12 @@ class MainProgram (MainWindow):
             if '-open_data' in event :
                 nb = int(event.removeprefix("-open_data").removesuffix("-")) # get the identifier of the clicked button
                 self.open_xlsx(values[f'-path_data{nb}-'])
+                if 'TRACE' in values[f'-path_data{nb}-']:
+                    self.data.trace_latency.update(disabled=True)
+                    self.data.trace_samples.update(disabled=True)
+                else:
+                    self.data.trace_latency.update(disabled=False)
+                    self.data.trace_samples.update(disabled=False)
                 
             if event == '-trace_selvar-':
                 self.trace_selected_variables()

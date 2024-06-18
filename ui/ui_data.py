@@ -116,7 +116,7 @@ class UI_Data (sg.Frame):
         self.var_checkbox = []
         i=0
         for col in columns:
-            if '_A1' in col: # sorting the variables per axis
+            if '_A1' in col: # extracting the variables per axis
                 colname = col.rsplit('_A1', 1)[0] 
                 self._var_totrace.append(colname)
                 self.var_checkbox.append(sg.Checkbox('Motor ' + colname, enable_events=True, default=False, key=f'-varplot_cbx{i}-'))

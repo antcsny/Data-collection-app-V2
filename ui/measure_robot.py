@@ -24,16 +24,19 @@ class Measure_robot (CollectionGraphWindow):
     latencies = np.zeros(0)
 
     def __init__ (self, handler: KUKA_Handler, cell: int, dosysvar: bool, dotrace: bool, file_prefix: str, temp_dir: str = ".\\temp"):
-        """Creates a new measurement window
+        """Creates a new measurement window, showing the user the progression of the collection
+        If system variables collection is enabled in the measurement config, it will plot the number of buffered data and network latency
+        If not, it will be a simple window, updating when robot movement is done and when the data file is saved
 
         Args:
             handler (KUKA_Handler): The Kuka Handler
             cell (int): The number of the cell (from 1 to 3)
+            dosysvar / dotrace (bool) : True if the system variable / kuka trace collection method is enabled
             file_prefix (str): The prefix for the output file name     
             temp_dir (str, optional): The temporary working dir for the Kuka Trace parsing. Defaults to ".\temp".
         """        
         
-        super().__init__(cell)
+        super().__init__(cell, dosysvar)
         self._dosysvar = dosysvar
         self._dotrace = dotrace
 
@@ -89,17 +92,16 @@ class Measure_robot (CollectionGraphWindow):
             self.add(buffer, latency)
             self.latencies = np.append(self.latencies, latency)
 
-        try:
+        try:   
+            # launch data collection with configuration
             self.data, self.trace_data = self.reader.acquire(A_iter, speed, sampling, trace_sampling, next, done, load, lock, self.temp_dir)            
             self.collecting_data_done = True
-            # print("Moyenne Tps Reponse : ",self.data["Read_time"].mean())
-            # print("Moyenne Essais : ",self.data["Read_tries"].mean())
-            # print("Moyenne Dupliqués : ",self.data["Duplicates"].mean())
 
         except Exception as e:
             self.collecting_data_done = True
             traceback.print_exception(e)
 
+        # save data in xlsx file
         self.export_measures()
 
     def export_measures (self):
@@ -144,7 +146,9 @@ class Measure_robot (CollectionGraphWindow):
             self.storing_data_done = False
             self._status.update("Successfully stored data", text_color='#0c2')
             self._exit.update(disabled=False)
-        else:
+        elif self._dosysvar:
             self.redraw()
+        if not self._dosysvar:
+            self._subtitle.update("Kuka trace started\nRobot running")
         return True
     

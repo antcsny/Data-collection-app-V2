@@ -1,22 +1,38 @@
 # Data collector
 
-This tool is made to collect sensor data from KUKA KR 3 R540 robotic arm. 
+This tool is made to collect and plot sensor data from KUKA KR 3 R540 robotic arm. 
 It collects the system vairables via a custom KRL submodule and trace data from
-the KUKA Trace module.
+the KUKA Trace module of the robot controler.
+
+For the tests, we can use three idetntical KUKA Cell with robotic arms, as one is shown here :
 
 ![Robot Image](./images/KUKA.jpg)
 
-For each of the 6 motors, the following variables are measured by system variables:
+The robot is driven by a controler, that takes care of the power supply of each DC 
+motor independantly, robot program, memory and security. A robot program is stored in 
+a text format in .src file, associated with a .dat file for program data, each written 
+in KRL programming language. Global variables, which can be accessed by Python, are 
+located in $config.dat file. Among global variables there are system variables in read 
+only access, and this Python tool use it to collect data from the robot.
+
+As the purpose of this tool is to make a diagnosis on the robot arm health, the robot 
+program is a full-range motion on each axis of the robot. One motor iteration consists 
+of a axis movement by a defined angle from the default position, on positive then negative 
+side. Data analysis for diagnosis is curenly in developement.
+
+For each of the 6 motors of the robot arm, the following variables are measured by system variables:
 - Position
 - Torque
 - Current draw
 - Temperature
 
-This collects the data in real time with system variables. The main latency factor is
-the network quality, so an ethernet connection is preffered over Wi-Fi. The data
-is buffered on the robot side but has a hard-coded limit of 20000 samples. 
-The sampling rate has to be configured in accordance of the length of an 
-acquisition and with the network connection quality.
+This tool can collect the data in real time with system variables. The main latency 
+factor is the network quality, so an ethernet connection is preffered over Wi-Fi. The 
+data is buffered on the robot side but has a hard-coded limit of 20000 samples. The 
+sampling rate has to be configured in accordance of the length of an acquisition and with 
+the network connection quality. If the write index in the buffers reach the maximum value 
+(size of the buffer), it will loop back to the begining of the buffer. Data from system 
+variables is lost when the write index reach the read index
 
 Besides the system variables, the robot controler can measure the traces of the robot.
 It is a way intended by KUKA to recover data from the robot, that can measure the folowwing variables :
@@ -26,14 +42,13 @@ It is a way intended by KUKA to recover data from the robot, that can measure th
 - Temperature
 - Current
 
-At the end of a measure sequence, tha traces are recovered from the network and saved in local to bea accessible.
-KUKA Traces data is in binary format (.r64), with .dat, .trc and .txt associated.
-Each motor has it's own file in that format, python will convert all the files and concatenate them to
-return a readable file, as excel or csv. Note that you have to setup the network access to the robot
-controler before launching this program to be able to recover the traces.
+At the end of a measure sequence, the traces are recovered from the network and saved 
+in local to be accessible. KUKA Traces data is in binary format (.r64), with .dat, .trc 
+and .txt associated. Each motor has it's own file in that format, so Python will convert 
+all the files and concatenate them to return a readable file, as excel or csv.
 
-The data is acquired from a full-range motion of a motor. Each motor moves 
-independently from each other.
+**NB :** Network access to the robot have to be setup before launching this program to be 
+able to recover the traces.
 
 The data collected by the program can be found in the /data folder, 
 each data file having an explicit name with the date of the collection 
@@ -66,20 +81,41 @@ Summary
 
 ## Measure Sequence
 
-One measure run consists of a repetition of axis movement at a given speed. The numer of iterations by axis is variable and is defined by the user before launching the sequence. The speed of the robot can be modified to test the robot movement in diferent stress conditions.\
+One measure run consists of a repetition of axis movement at a given speed.
+The numer of iterations by axis is variable and is defined by the user before
+launching the sequence. The speed of the robot can be modified to test the robot
+movement in diferent stress conditions.\
 As data is recovered in time, this data collector has
-a sampling rate. For the system variables, it varies from 12 to 60 milliseconds by a step of 12, the minimum
-of time the KRL program can measure from internal timers.
-KUKA traces provide a sampling rate from 1, 4 and 12ms, but oly the two last ones are implemented in this code.
+a sampling rate. For the system variables, it varies from 12 to 60 milliseconds 
+by a step of 12, the minimum of time the KRL program can measure from internal timers.
+KUKA traces provide a sampling rate from 1, 4 and 12ms, but oly the two last ones 
+are implemented and working in this code.
 Traces time sampling is more reliable than global variables.
 
 ## UI Description and details
 
-As shown on the image below, the User Interface is divided in main 6 functions.
+As shown on the image below, the User Interface is divided in 6 main functions.
 
 ![GUI Screenshot](./images/GUI.png)
 
-The PysimpleGUI librairy used in this application provide easy access to basic components of a gui, called widjets. For example, we can use buttons, keyboard input, checkboxes and combos. Combos are a way to give the user a visual choice on a variable. Note that all PysimpleGUI widjets give the possibility to run an action when an event occurs from it. Events are treated in the main loop of the program, and are defined as text by the programmer for each widjet. 
+The PysimpleGUI librairy used in this application provide easy access to basic 
+components of a gui, called widjets. For example, we can use buttons, keyboard 
+input, checkboxes and combos. Combos are a way to give the user a visual choice 
+on a variable. Note that all PysimpleGUI widjets give the possibility to run an 
+action when an event occurs from it. Events are treated in the main loop of the 
+program, and are defined as text by the programmer for each widjet.
+
+As shown on the GUI, robot related functions are disabled on startup. To enable 
+it, one of the robot has to be connected by clicking on the blue buttons followng
+"Connected Robots"in collection settings. If connection has succeed, it will apear 
+green, red otherwise.
+
+With multiple testings, we sometimes noticed connection difficulties with the robot 
+cell 1. It can appear after a measure sequence or after a period of time doing nothing, 
+so make sure the connection is not broken for this robot. If connection problems occurs,
+**C3 bridge** on the cell has to be restarted by **Minimizing HMI** on the control panel 
+(in settings). When Windows is showed, right click using a mouse on **C3** on the right 
+side of the task bar.
 
 ### Collection settings
 
@@ -94,22 +130,42 @@ Due to software limitations from the KRL environment, the sampling rate is
 bound to be a multiple of 12. 
 
 The speed of the motors during the acquisition varies according to the confifuration.
-This value is defined as a percentage of the max value (i.e. 0 to 100). 
-By default, the 'Constant' checkbox is set to true. It means that the robot speed will be constant for the whole test and thus only one acquisition is made. By clicking on the checkbox, it allows the user to set a range of speeds for the test, from minimum to maximum by a step.\
-A test at multiple speed is equivalent to the merge of multiple single speed runs. So, check the configurations before launching an acquisition, even if it is able to stop between the runs if a problem has occurred. \
-During a run at multple speed, system variables and KUKA traces are runing. To minimize data loss, we wait for each collection method to finish its process to start the next run.
+This value is defined as a percentage of the max value (i.e. 0 to 100), Note that 
+limiting the value on the control panel will affect the resulting speed of the robot, 
+as Python speed is a multiplicator of the one on the control panel. 
+
+By default, the 'Constant' checkbox is set to true. It means that the robot speed will 
+be constant for the whole test and thus only one acquisition is made. By clicking on the 
+checkbox, it allows the user to set a range of speeds for the test, from minimum to maximum 
+by a step.
+
+A test at multiple speed is equivalent to the data merge of multiple single speed runs. So, 
+check the configurations before launching an acquisition, even if it is able to stop between 
+the runs if a problem has occurred.
+
+During a measure sequence, system variables and KUKA traces can run at the same time to compare 
+the data. If one of the collection method is prefered, we give the ability to chose which one 
+is running with two checkboxes. By configurattion, Kuka trace running at 12ms sampling rate 
+can't exceed 600 seconds of time (same with 4ms -> 200 seconds maximum). So to minimize data 
+loss, we wait for both collection method to finish its process to start the next run, especialy 
+on multiple speed runs.
 
 ### KUKA traces
 
 A combo selector is used to select the KUKA Trace configuration that will be 
-run along side of the system variable collection. The collected data is the same
+run for data collection. The collected data is the same
 as with the system variables but with more precision and reliability. 
 The acquisition is done by the RTOS of the robot.
 
 ### Robots loads
 
-Enter here the load on each robot, with weight or bungee coords
-It will be displayed in the result dataset for data processing
+Curent kuka cell gripper tool on the robot enable the use of loads. Diferent weights of 500g, 
+1kg and 2kg are available as linear loads, as if the robot arm carry something. For more specific 
+stress testing, two bungee cords are available to bring a non linear force in the robot movement.
+As other sections of the UI, a robot must be connected to enable load input. 
+Load configuration entered by the user will apear in the dataset, coded in a numerical format. 
+For details, see get_category() function in mainwindow class of the python program. Load entry 
+on the gui is not automatic, so entry the right configuration corresponding to the test.
 
 ### Latency test
 
@@ -118,12 +174,13 @@ Plots a graph of the latency versus time and distributions with histograms
 
 ### Gripper commands
 
-Command the gripper of the selected robot : open or close
+Command the gripper of the selected robot : open or close.
+This section is enabled when one robot is connected, and will do nothing if the selected 
+robot is not connected
 
 ### Collected data plot
 
-Accessible without robot connection, this section plots data by selecting 
-a excel file and hitting corresponding buttons
+Accessible without robot connection, this section plots data. First, a excel file containing data has to be selected with the Browse button, then OPEN. Variables available on robot axes will be shown as checkboxes in the frame 'varriables to plot' to give the user the choice to plot a unique variable. As variables provide data on each axis, each one of them can be disabled by unchecking the checkboxes 'Axis to plot'.
 
 ## Program Structure
 
@@ -155,7 +212,8 @@ class methods instead of global variables and functions.
 
 ## KRL Submodule
 
-This section describes how to deploy the data collection on a cell.
+This section describes how to deploy the data collection with system variables on a kuka cell.
+Kuka trace is by default implemented on the robot, making this tool more convenient to use on every robot.
 
 ### Global variables
 
@@ -222,9 +280,9 @@ DECL E6AXIS ColBUFFER_POS_MEAS[20000]
 
 ### `Data_collector.sub`
 
-To allow for data collection, please be sure to add the `Data_collector.sub`
-to the list of running submodules. This submodules takes up to **3 minutes** to 
-properly initialize the internal data buffers.
+To allow data collection with system variables, please be sure to add the `Data_collector.sub`
+to the list of running submodules. This submodules takes up to **1 minute** to 
+properly initialize the first values of the internal data buffers.
 
 This progam can be found in [`robot/KRL/`](./robot/KRL).
 
@@ -237,8 +295,8 @@ the `TRACE` folder of the robot.
 
 ### The `Axis_Main.src` program
 
-The data collection uses the `Axis_Main.src` program to create the data 
-to collect. It must be running in `AUT` mode at `100%` of run speed to produce
+The data collection uses the `Axis_Main_dataset.src` program to create the data 
+to collect. It must be running in `AUT` mode at `100%` of run speed on the control panel to produce
 valid data.
 
 This progam can be found in [`robot/KRL/`](./robot/KRL)`.
