@@ -124,7 +124,7 @@ class Measure_robot (CollectionGraphWindow):
         """        
 
         file_name = self.file_name + ".xlsx"
-        trace_file_name = self.trace_file_name + ".xlsx"
+        trace_file_name = self.trace_file_name + "_TRACE.xlsx"
         
         try:
             if self._dosysvar and self.data is not None:
