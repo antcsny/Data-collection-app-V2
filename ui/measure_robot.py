@@ -3,6 +3,7 @@ import numpy as np
 import traceback
 from threading import Semaphore
 from typing import Callable
+from os import _exit
 
 from ui import CollectionGraphWindow
 from kuka import KUKA_DataReader, KUKA_Handler
@@ -46,7 +47,7 @@ class Measure_robot (CollectionGraphWindow):
         self.file_prefix = file_prefix
         self.temp_dir = temp_dir
         
-    def generate_file_name (self, A_iter, speed, sampling, load):
+    def generate_file_name (self, A_iter, speed, sampling, load, trace_config = "4_ms"):
         """Creates a suffix for the output file name containing the acquisition
         parameters
 
@@ -55,18 +56,32 @@ class Measure_robot (CollectionGraphWindow):
             speed (str|int|slice): The speed (range) of the acquisition
             sampling (int|str): The sampling rate of the system variables
             load (int): The class of the acquisition
+            trace_config (str): The trace configuration name
 
         Returns:
             str: The standardized suffix
         """        
 
-        self.settings = "[" + (speed if type(speed) != slice else f'{speed.start}%-{speed.stop}') + "%] "
-        self.settings += f"[{sampling}ms] " 
-        self.settings += f"[class {load}] "
-        iter = " ".join(A_iter) 
-        self.settings += f"[{iter}] " 
+        iter = " ".join(A_iter)
 
-        self.file_name = self.file_prefix + " " + self.settings + "- " + self.name
+        self.settings = " ".join([
+            "[" + (speed if type(speed) != slice else f'{speed.start}%-{speed.stop}') + "%]",
+            f"[{sampling}ms]",
+            f"[class {load}]",
+            f"[{iter}]" 
+        ])
+
+        trace_sampling = "".join(trace_config.split("_")[:2])
+        self.trace_settings = " ".join([
+            "[" + (speed if type(speed) != slice else f'{speed.start}%-{speed.stop}') + "%]",
+            f"[{trace_sampling}]",
+            f"[class {load}]",
+            f"[{iter}]" 
+        ])
+
+        self.file_name = self.file_prefix + " " + self.settings + " - " + self.name
+        self.trace_file_name = self.file_prefix + " " + self.trace_settings + " - " + self.name
+
         return self.file_name
     
     def measure_sequence (self, A_iter, speed, sampling, trace_sampling, load: int = 0, lock: Semaphore = None, done: Callable = None):
@@ -81,14 +96,14 @@ class Measure_robot (CollectionGraphWindow):
             lock (Semaphore, optional): The semaphore used to sync multiple robots. Defaults to None.
             done (Callable, optional): The function used to declare the end of a run. Defaults to None.
         """        
-        
+
         self.generate_file_name(A_iter, speed, sampling, load)
 
         print("Starting data collection for " + self.name + " with settings " + self.settings)
         
         def next (latency: float, queue_read: int, queue_write: int):
             # Changer 500 par la taille finale du buffer
-            buffer = queue_write - queue_read if queue_read <= queue_write else 500 - queue_read + queue_write
+            buffer = queue_write - queue_read if queue_read <= queue_write else 20000 - queue_read + queue_write
             self.add(buffer, latency)
             self.latencies = np.append(self.latencies, latency)
 
@@ -109,7 +124,7 @@ class Measure_robot (CollectionGraphWindow):
         """        
 
         file_name = self.file_name + ".xlsx"
-        trace_file_name = self.file_name + "_TRACE" + ".xlsx"
+        trace_file_name = self.trace_file_name + ".xlsx"
         
         try:
             if self._dosysvar and self.data is not None:
@@ -135,17 +150,19 @@ class Measure_robot (CollectionGraphWindow):
         event, value = self.read(timeout=10)
         
         if event == sg.WIN_CLOSED or event == '-colexit-':
+            if not (self.storing_data_done or self.collecting_data_done):
+                if self.dotrace:
+                    self.reader.trace.Trace_Stop()
+                _exit(0)
             self.close()
             return False
         
-        if self.collecting_data_done :
-            self.collecting_data_done = False
-            self._status.update("Collection Done",text_color="#00f")
-            self._exit.update(disabled=True)
-        elif self.storing_data_done :
-            self.storing_data_done = False
+        if self.storing_data_done :
             self._status.update("Successfully stored data", text_color='#0c2')
             self._exit.update(disabled=False)
+        elif self.collecting_data_done :
+            self._status.update("Collection Done",text_color="#00f")
+            self._exit.update(disabled=True, text="Exit")
         elif self._dosysvar:
             self.redraw()
         if not self._dosysvar:

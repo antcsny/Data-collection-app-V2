@@ -13,7 +13,10 @@ class UI_KUKATrace( sg.Frame):
 
     def __make_layout (self):
 
-        self._sampling_rate = sg.Combo(['12_ms_v2','4_ms_v2'], key='-Trace_config-', default_value='12_ms_v2', size=(20, 1))
+        self._sampling_rate = sg.Combo([
+            '12_ms_v2',
+            '4_ms_v2'
+        ], key='-Trace_config-', default_value='12_ms_v2', size=(20, 1))
 
         self._layout = [
             [ sg.Text('Trace Sampling rate:'), self._sampling_rate ]
